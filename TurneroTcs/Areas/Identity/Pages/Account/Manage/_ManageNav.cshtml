@@ -1,0 +1,21 @@
+@inject SignInManager<IdentityUser> SignInManager
+@{
+    var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
+}
+
+<div class="manage-nav card shadow-sm">
+    <div class="card-body">
+        <div class="manage-nav-title">Cuenta</div>
+        <div class="list-group list-group-flush manage-nav-list">
+            <a class="list-group-item list-group-item-action @ManageNavPages.IndexNavClass(ViewContext)" id="profile" asp-page="./Index">Perfil</a>
+            <a class="list-group-item list-group-item-action @ManageNavPages.EmailNavClass(ViewContext)" id="email" asp-page="./Email">Correo</a>
+            <a class="list-group-item list-group-item-action @ManageNavPages.ChangePasswordNavClass(ViewContext)" id="change-password" asp-page="./ChangePassword">Contrasena</a>
+            @if (hasExternalLogins)
+            {
+                <a class="list-group-item list-group-item-action @ManageNavPages.ExternalLoginsNavClass(ViewContext)" id="external-login" asp-page="./ExternalLogins">Inicios externos</a>
+            }
+            <a class="list-group-item list-group-item-action @ManageNavPages.TwoFactorAuthenticationNavClass(ViewContext)" id="two-factor" asp-page="./TwoFactorAuthentication">Autenticacion de dos factores</a>
+            <a class="list-group-item list-group-item-action @ManageNavPages.PersonalDataNavClass(ViewContext)" id="personal-data" asp-page="./PersonalData">Datos personales</a>
+        </div>
+    </div>
+</div>

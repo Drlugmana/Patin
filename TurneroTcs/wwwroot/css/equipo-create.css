@@ -1,0 +1,76 @@
+:root {
+  --equipo-create-ink: #1e252b;
+  --equipo-create-muted: #66737f;
+  --equipo-create-accent: #1f4d46;
+  --equipo-create-border: rgba(30, 37, 43, 0.12);
+  --equipo-create-card: rgba(255, 255, 255, 0.78);
+  --equipo-create-shadow: 0 18px 50px rgba(21, 30, 34, 0.16);
+}
+
+body {
+  background: radial-gradient(circle at top, #f7f5ef 0%, #eef2f5 45%, #e9f0ef 100%);
+  color: var(--equipo-create-ink);
+}
+
+.equipo-create-card {
+  border-radius: 24px;
+  border: 1px solid var(--equipo-create-border);
+  background: var(--equipo-create-card);
+  box-shadow: var(--equipo-create-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.equipo-create-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.equipo-create-subtitle {
+  color: var(--equipo-create-muted);
+}
+
+.equipo-create-badge {
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.equipo-create-label {
+  font-weight: 600;
+  color: var(--equipo-create-ink);
+}
+
+.equipo-create-input {
+  border-radius: 14px;
+  border: 1px solid rgba(31, 77, 70, 0.2);
+  padding: 0.65rem 0.8rem;
+  box-shadow: 0 10px 20px rgba(25, 54, 50, 0.08);
+}
+
+.equipo-create-input:focus {
+  border-color: rgba(31, 77, 70, 0.45);
+  box-shadow: 0 0 0 3px rgba(31, 77, 70, 0.2);
+}
+
+.equipo-create-primary {
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  box-shadow: 0 12px 22px rgba(31, 77, 70, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.equipo-create-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(31, 77, 70, 0.22);
+}
+
+.equipo-create-secondary {
+  border-radius: 999px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.equipo-create-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(31, 77, 70, 0.15);
+}

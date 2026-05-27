@@ -1,0 +1,233 @@
+@model TurneroTcs.ViewModels.FeriadoIndexViewModel
+@{
+    ViewData["Title"] = "Turnero | Feriados";
+    var showCreateForm = !ViewData.ModelState.IsValid;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/feriado-index.css" asp-append-version="true" />
+}
+
+<form id="feriado-inline-token" method="post" style="display:none">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h2 class="h4 mb-1 feriado-title">Feriados</h2>
+            <div class="text-muted feriado-subtitle">Gestiona los dias feriados y rangos especiales</div>
+        </div>
+        <button class="btn app-btn-primary feriado-cta feriado-create-toggle"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#feriado-create-collapse"
+                aria-expanded="@(showCreateForm ? "true" : "false")"
+                aria-controls="feriado-create-collapse">
+            Crear feriado
+        </button>
+    </div>
+
+    <div class="collapse feriado-create-collapse @(showCreateForm ? "show" : null)" id="feriado-create-collapse">
+        <div class="card shadow-sm feriado-create-card mb-4">
+            <div class="card-body">
+                <div class="feriado-card-title mb-3">Nuevo feriado</div>
+                <form asp-action="Create" method="post" class="row g-3 align-items-end">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="col-12 text-danger"></div>
+                    <div class="col-md-4">
+                        <label asp-for="Create.NombreFeriado" class="form-label feriado-label"></label>
+                        <input asp-for="Create.NombreFeriado" type="text" class="form-control feriado-input" maxlength="120" />
+                        <span asp-validation-for="Create.NombreFeriado" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Create.InicioFeriado" class="form-label feriado-label"></label>
+                        <input asp-for="Create.InicioFeriado"
+                               type="text"
+                               class="form-control feriado-input app-date-input"
+                               data-app-calendar="true"
+                               autocomplete="off" />
+                        <span asp-validation-for="Create.InicioFeriado" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Create.FinFeriado" class="form-label feriado-label"></label>
+                        <input asp-for="Create.FinFeriado"
+                               type="text"
+                               class="form-control feriado-input app-date-input"
+                               data-app-calendar="true"
+                               autocomplete="off" />
+                        <span asp-validation-for="Create.FinFeriado" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 text-end d-flex justify-content-end gap-2">
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#feriado-create-collapse"
+                                aria-controls="feriado-create-collapse">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary feriado-cta">Guardar feriado</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm feriado-card">
+        <div class="card-body p-0">
+            <div class="table-responsive feriado-table-wrap">
+                <table class="table align-middle mb-0 feriado-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Feriados != null && Model.Feriados.Any())
+                        {
+                            foreach (var feriado in Model.Feriados)
+                            {
+                                <tr class="feriado-row"
+                                    data-feriado-id="@feriado.FeriadoId"
+                                    data-nombre="@feriado.NombreFeriado"
+                                    data-inicio="@feriado.InicioFeriado.ToString("yyyy-MM-dd")"
+                                    data-fin="@feriado.FinFeriado.ToString("yyyy-MM-dd")">
+                                    <td>
+                                        <div class="feriado-name-wrap">
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary feriado-inline-edit feriado-expand-btn"
+                                                    aria-label="Expandir fila"
+                                                    aria-expanded="false"
+                                                    aria-controls="feriado-edit-@feriado.FeriadoId">
+                                                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                                    <path d="M7.4 8.6 12 13.2l4.6-4.6 1.4 1.4-6 6-6-6z" />
+                                                </svg>
+                                            </button>
+                                            <span class="feriado-cell" data-field-display="NombreFeriado">@feriado.NombreFeriado</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="feriado-cell" data-field-display="InicioFeriado">@feriado.InicioFeriado.ToString("yyyy-MM-dd")</span>
+                                    </td>
+                                    <td>
+                                        <span class="feriado-cell" data-field-display="FinFeriado">@feriado.FinFeriado.ToString("yyyy-MM-dd")</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button"
+                                                class="btn btn-outline-danger feriado-delete-btn"
+                                                aria-label="Eliminar feriado"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#feriado-delete-modal"
+                                                data-feriado-id="@feriado.FeriadoId"
+                                                data-feriado-nombre="@feriado.NombreFeriado">
+                                            <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                                <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v9h-2V9Zm4 0h2v9h-2V9ZM7 9h2v9H7V9Z" />
+                                            </svg>
+                                        </button>
+                                        <span class="feriado-inline-status" aria-live="polite"></span>
+                                    </td>
+                                </tr>
+                                <tr class="feriado-edit-row" data-feriado-edit-for="@feriado.FeriadoId" id="feriado-edit-@feriado.FeriadoId">
+                                    <td colspan="4">
+                                        <div class="feriado-edit-panel">
+                                            <div class="feriado-edit-header">
+                                                <div>
+                                                    <strong>Editar feriado</strong>
+                                                    <span class="text-muted">Actualiza datos y guarda cambios.</span>
+                                                </div>
+                                            </div>
+                                            <div class="row g-3 feriado-edit-grid">
+                                                <div class="col-md-4">
+                                                    <label class="form-label feriado-edit-label">Nombre</label>
+                                                    <input class="form-control feriado-edit-input" data-field="NombreFeriado" value="@feriado.NombreFeriado" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label feriado-edit-label">Inicio</label>
+                                                    <input class="form-control feriado-edit-input app-date-input"
+                                                           type="text"
+                                                           data-field="InicioFeriado"
+                                                           data-app-calendar="true"
+                                                           autocomplete="off"
+                                                           value="@feriado.InicioFeriado.ToString("yyyy-MM-dd")" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label feriado-edit-label">Fin</label>
+                                                    <input class="form-control feriado-edit-input app-date-input"
+                                                           type="text"
+                                                           data-field="FinFeriado"
+                                                           data-app-calendar="true"
+                                                           autocomplete="off"
+                                                           value="@feriado.FinFeriado.ToString("yyyy-MM-dd")" />
+                                                </div>
+                                            </div>
+                                            <div class="feriado-edit-actions">
+                                                <button type="button" class="btn btn-outline-secondary feriado-inline-cancel">Cancelar</button>
+                                                <button type="button" class="btn btn-primary feriado-inline-save">Guardar cambios</button>
+                                                <span class="feriado-inline-status" aria-live="polite"></span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    No hay feriados registrados.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="feriado-delete-modal" tabindex="-1" aria-labelledby="feriado-delete-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="feriado-delete-modal-label">Eliminar feriado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Esta accion elimina el feriado de forma permanente.</p>
+                <p class="mb-0">Deseas eliminar a <strong data-feriado-delete-name>este feriado</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="feriado-delete-form" asp-action="Delete" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="" />
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/feriado-inline-edit.js" asp-append-version="true"></script>
+    @if (TempData["Success"] is string successMessage)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                window.AppToast?.show(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(successMessage)), "success");
+            });
+        </script>
+    }
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                window.AppToast?.show(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(errorMessage)), "danger");
+            });
+        </script>
+    }
+}

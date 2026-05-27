@@ -1,0 +1,236 @@
+:root {
+  --feriado-ink: #1e252b;
+  --feriado-muted: #66737f;
+  --feriado-accent: #1f4d46;
+  --feriado-border: rgba(30, 37, 43, 0.12);
+  --feriado-card: rgba(255, 255, 255, 0.78);
+  --feriado-shadow: 0 18px 50px rgba(21, 30, 34, 0.16);
+}
+
+body {
+  background: radial-gradient(circle at top, #f7f5ef 0%, #eef2f5 45%, #e9f0ef 100%);
+  color: var(--feriado-ink);
+}
+
+.feriado-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.feriado-subtitle {
+  color: var(--feriado-muted);
+}
+
+.feriado-card,
+.feriado-create-card {
+  border-radius: 22px;
+  border: 1px solid var(--feriado-border);
+  background: var(--feriado-card);
+  box-shadow: var(--feriado-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.feriado-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--feriado-ink);
+}
+
+.feriado-help {
+  font-size: 0.85rem;
+  color: var(--feriado-muted);
+}
+
+.feriado-label,
+.feriado-edit-label {
+  font-weight: 600;
+  color: var(--feriado-ink);
+}
+
+.feriado-input,
+.feriado-edit-input {
+  border-radius: 12px;
+  border: 1px solid rgba(31, 77, 70, 0.2);
+  box-shadow: 0 8px 16px rgba(31, 77, 70, 0.08);
+}
+
+.feriado-input:focus,
+.feriado-edit-input:focus {
+  border-color: rgba(31, 77, 70, 0.45);
+  box-shadow: 0 0 0 3px rgba(31, 77, 70, 0.18);
+}
+
+.feriado-cta {
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+}
+
+.feriado-create-toggle {
+  min-width: 150px;
+}
+
+.feriado-create-collapse {
+  margin-bottom: 1rem;
+}
+
+.feriado-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--feriado-muted);
+}
+
+.feriado-switch.form-switch {
+  padding-left: 2.6rem;
+}
+
+.feriado-switch .form-check-input {
+  margin-left: -2.6rem;
+  background-color: rgba(31, 77, 70, 0.2);
+  border-color: rgba(31, 77, 70, 0.35);
+}
+
+.feriado-switch .form-check-input:checked {
+  background-color: var(--feriado-accent);
+  border-color: var(--feriado-accent);
+}
+
+.feriado-table-wrap {
+  border-radius: 22px;
+}
+
+.feriado-table thead {
+  background: rgba(31, 77, 70, 0.06);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--feriado-muted);
+}
+
+.feriado-table thead th {
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--feriado-border);
+}
+
+.feriado-table td {
+  padding: 1rem 1.2rem;
+  border-top: 1px solid rgba(31, 77, 70, 0.08);
+}
+
+.feriado-row {
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.feriado-row:hover {
+  background: rgba(31, 77, 70, 0.06);
+  transform: translateY(-1px);
+}
+
+.feriado-cell {
+  display: inline-block;
+}
+
+.feriado-name-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.feriado-row.is-editing {
+  background: rgba(31, 77, 70, 0.08);
+}
+
+.feriado-edit-row {
+  display: none;
+}
+
+.feriado-edit-row.is-open {
+  display: table-row;
+}
+
+.feriado-edit-panel {
+  padding: 1.2rem 1.4rem;
+  background: rgba(31, 77, 70, 0.06);
+  border-radius: 18px;
+  border: 1px solid rgba(31, 77, 70, 0.15);
+  box-shadow: 0 12px 26px rgba(21, 30, 34, 0.08);
+}
+
+.feriado-edit-header {
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.feriado-edit-grid {
+  margin-bottom: 1rem;
+}
+
+.feriado-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.feriado-inline-save,
+.feriado-inline-cancel {
+  display: none;
+}
+
+.feriado-edit-row .feriado-inline-save,
+.feriado-edit-row .feriado-inline-cancel {
+  display: inline-flex;
+}
+
+.feriado-inline-status {
+  display: none;
+  margin-left: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--feriado-muted);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.feriado-inline-status.is-visible {
+  display: inline-flex;
+  opacity: 1;
+}
+
+.feriado-expand-btn,
+.feriado-delete-btn {
+  border-radius: 999px;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feriado-expand-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.feriado-row.is-editing .feriado-expand-btn svg,
+.feriado-expand-btn.is-open svg {
+  transform: rotate(180deg);
+}
+
+.feriado-delete-btn {
+  margin-left: 0.35rem;
+}
+
+@media (max-width: 768px) {
+  .feriado-table thead {
+    font-size: 0.65rem;
+  }
+
+  .feriado-cta {
+    width: 100%;
+  }
+
+  .feriado-create-toggle {
+    min-width: 0;
+  }
+}

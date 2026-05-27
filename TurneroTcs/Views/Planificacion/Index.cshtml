@@ -1,0 +1,672 @@
+﻿@model TurneroTcs.ViewModels.PlanificacionViewModel
+@{
+    ViewData["Title"] = "Turnero | Planificacion";
+    var canEditBlueprint = false;
+}
+
+@functions {
+    private static readonly DateOnly FechaBasePlanificacion = new(2000, 1, 1);
+
+    private static bool EsTipoTurnoNocturno(TimeOnly horaInicio, TimeOnly horaFin)
+    {
+        var inicio = FechaBasePlanificacion.ToDateTime(horaInicio);
+        var fin = FechaBasePlanificacion.ToDateTime(horaFin);
+        if (fin <= inicio)
+        {
+            fin = fin.AddDays(1);
+        }
+
+        var duracionMinutos = (fin - inicio).TotalMinutes;
+        if (duracionMinutos <= 0)
+        {
+            return false;
+        }
+
+        return CalcularMinutosVentanaNocturna(inicio, fin) / duracionMinutos > 0.70d;
+    }
+
+    private static int CalcularMinutosVentanaNocturna(DateTime inicio, DateTime fin)
+    {
+        var total = 0d;
+        var fecha = inicio.Date.AddDays(-1);
+        while (fecha <= fin.Date)
+        {
+            var inicioVentana = fecha.AddHours(18);
+            var finVentana = fecha.AddDays(1).AddHours(7);
+            var inicioInterseccion = inicio > inicioVentana ? inicio : inicioVentana;
+            var finInterseccion = fin < finVentana ? fin : finVentana;
+
+            if (finInterseccion > inicioInterseccion)
+            {
+                total += (finInterseccion - inicioInterseccion).TotalMinutes;
+            }
+
+            fecha = fecha.AddDays(1);
+        }
+
+        return (int)Math.Round(total);
+    }
+}
+
+@section Styles {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/planificacion-index.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/planificacion-index.js" asp-append-version="true"></script>
+}
+
+<form id="planificacion-token" method="post" style="display:none">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="container py-4">
+    <div class="planificacion-hero">
+        <div>
+            <p class="planificacion-eyebrow">Configuracion de turnos del equipo</p>
+            <p class="planificacion-subtitle">
+                Equipo: <strong>@Model.EquipoNombre</strong>
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-controller="Equipo" asp-action="Index" class="btn btn-outline-secondary planificacion-back-btn">Volver a equipos</a>
+            <a asp-controller="Excepcion"
+               asp-action="Index"
+               asp-route-equipoId="@Model.EquipoId"
+               class="btn btn-outline-primary planificacion-back-btn">
+                Excepciones
+            </a>
+        </div>
+    </div>
+
+    <div class="planificacion-controls" data-can-blueprint="@canEditBlueprint.ToString().ToLower()">
+        <div class="planificacion-controls-left">
+            <div class="planificacion-group-row">
+                <div class="planificacion-group-field">
+                    <label for="grupoSelect" class="planificacion-label">Grupo para cobertura normal</label>
+                    <select id="grupoSelect" class="planificacion-select"
+                            data-equipo-id="@Model.EquipoId"
+                            data-grupos-ids="@string.Join(",", Model.Grupos.Select(g => g.Value))">
+                        <option value="">-- Sin grupo: solo auxiliares del equipo --</option>
+                        @foreach (var grupo in Model.Grupos)
+                        {
+                            <option value="@grupo.Value">@grupo.Text</option>
+                        }
+                    </select>
+                </div>
+                <input type="hidden" id="planificacionModeInput" value="planificacion" />
+                <div class="planificacion-quick-options">
+                    <div class="planificacion-feriado-quick">
+                        <span class="planificacion-label">Tipo de semana</span>
+                        <div class="planificacion-scope-tabs" role="tablist" aria-label="Tipo de semana">
+                            <button type="button"
+                                    class="planificacion-scope-tab is-active"
+                                    data-scope-tab="normal"
+                                    role="tab"
+                                    aria-selected="true">
+                                Normal
+                            </button>
+                            <button type="button"
+                                    class="planificacion-scope-tab"
+                                    data-scope-tab="feriado"
+                                    role="tab"
+                                    aria-selected="false"
+                                    disabled>
+                                Feriado
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="planificacion-secundarios-config" id="planificacionSecundariosConfig" hidden>
+                        <div class="planificacion-secondary-field">
+                            <span class="planificacion-label">Cobertura</span>
+                            <label class="planificacion-secondary-toggle" for="chkUsaSoloSecundarios">
+                                <input type="checkbox" id="chkUsaSoloSecundarios" role="switch" />
+                                <span>Usar solo secundarios</span>
+                            </label>
+                        </div>
+                        <div class="planificacion-secundarios-extra" id="planificacionSecundariosExtra" hidden>
+                            <div class="planificacion-source-field">
+                                <label for="grupoFuenteSecundariosSelect" class="planificacion-label">Grupo fuente</label>
+                                <select id="grupoFuenteSecundariosSelect" class="planificacion-select">
+                                    <option value="">Selecciona grupo fuente</option>
+                                    @foreach (var grupo in Model.Grupos)
+                                    {
+                                        <option value="@grupo.Value">@grupo.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="planificacion-persona-unica-field" id="planificacionPersonaUnicaWrap" hidden>
+                                <span class="planificacion-label planificacion-label-spacer" aria-hidden="true">Accion</span>
+                                <label class="planificacion-secondary-toggle planificacion-persona-unica" for="chkUsarPersonaUnicaSemana">
+                                    <input type="checkbox" id="chkUsarPersonaUnicaSemana" role="switch" />
+                                    <span class="planificacion-secondary-toggle-copy">
+                                        <strong>Una persona por semana</strong>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    @if (canEditBlueprint)
+                    {
+                        <div class="planificacion-usa-secundarios" id="planificacionUsaSecundariosWrap" style="display:none;">
+                            <label class="planificacion-checkbox-label">
+                                <input type="checkbox" id="chkUsaGruposSecundarios" />
+                                <span>Usar grupos secundarios</span>
+                            </label>
+                        </div>
+                    }
+                </div>
+                <div class="planificacion-controls-rules-wrap">
+                    <div class="planificacion-controls-rules" aria-label="Reglas del equipo">
+                        <div class="planificacion-controls-stat planificacion-controls-rule">
+                            <span>Max noches / mes</span>
+                            <input type="number"
+                                   id="maxNocturnosMesInput"
+                                   class="form-control planificacion-config-input"
+                                   min="7"
+                                   max="20"
+                                   value="15"
+                                   aria-label="Maximo de noches por mes" />
+                        </div>
+                        <div class="planificacion-controls-stat planificacion-controls-rule">
+                            <span>Max noches / semana</span>
+                            <input type="number"
+                                   id="maxNocturnosSemanaInput"
+                                   class="form-control planificacion-config-input"
+                                   min="1"
+                                   max="7"
+                                   value="2"
+                                   aria-label="Maximo de noches por semana" />
+                        </div>
+                        <div class="planificacion-controls-stat planificacion-controls-rule">
+                            <span>Max turnos FDS / mes</span>
+                            <input type="number"
+                                   id="maxFinesSemanaMesInput"
+                                   class="form-control planificacion-config-input"
+                                   min="1"
+                                   max="12"
+                                   value="10"
+                                   aria-label="Maximo de turnos de fin de semana por mes" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="planificacion-controls-stats is-hidden" aria-label="Resumen rapido de la semana">
+            <div class="planificacion-controls-stat">
+                <span>Grupo activo</span>
+                <strong data-planificacion-grupo>Sin grupo</strong>
+            </div>
+            <div class="planificacion-controls-stat">
+                <span>Personas activas</span>
+                <strong data-planificacion-personas>0</strong>
+                <small data-planificacion-personas-detalle>Sin grupo</small>
+            </div>
+            <div class="planificacion-controls-stat">
+                <span>Cupos semana</span>
+                <strong data-planificacion-total>0</strong>
+                <small data-planificacion-total-detalle>Normal 0 / Aux 0</small>
+            </div>
+            <div class="planificacion-controls-stat">
+                <span>Balance primarios</span>
+                <strong data-planificacion-balance>0 / 0</strong>
+                <small data-planificacion-balance-detalle>Selecciona grupo</small>
+            </div>
+            <div class="planificacion-controls-stat">
+                <span>Noches semana</span>
+                <strong data-planificacion-noches>0</strong>
+            </div>
+            <div class="planificacion-controls-stat">
+                <span>FDS semana</span>
+                <strong data-planificacion-fds>0</strong>
+            </div>
+            <div class="planificacion-controls-actions">
+                <span class="planificacion-save-state" id="planificacionSaveState" aria-live="polite">
+                    Sin cambios
+                </span>
+                <button type="button" id="btnGuardarPlanificacion" class="btn btn-primary planificacion-save-btn" disabled>
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                        <path d="M8.5 1.5V2H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4.5l-3-3H8.5zM3 3h5v3H3V3zm10 10H2V7h11v6zm-2-5h-2v4h2V8z"/>
+                    </svg>
+                    Guardar cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="planificacion-layout">
+        <div class="planificacion-main">
+            <div id="planificacionMatrizContainer" class="planificacion-matriz-container" style="display:none;">
+                <div id="planificacionCoberturaGrupoSection">
+                    <div class="planificacion-callout">
+                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                            <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+                        </svg>
+                        <span>Agenda semanal unificada. Edita cobertura y activa detalle solo cuando lo necesites.</span>
+                        <div class="planificacion-agenda-legend" aria-hidden="true">
+                            <span class="planificacion-agenda-legend-item planificacion-agenda-legend-item--c"><strong>C</strong> Cobertura</span>
+                            <span class="planificacion-agenda-legend-item planificacion-agenda-legend-item--a"><strong>A</strong> Apoyo</span>
+                            <span class="planificacion-agenda-legend-item planificacion-agenda-legend-item--f"><strong>F</strong> Flexible</span>
+                        </div>
+                    </div>
+                    <div class="planificacion-matrix-card">
+                        <div class="table-responsive planificacion-table-wrap">
+                            <table class="table mb-0 planificacion-table" id="planificacionAgendaMatriz">
+                                <thead>
+                                    <tr>
+                                        <th class="planificacion-th-turno-label">Turno</th>
+                                        @foreach (var dia in TurneroTcs.ViewModels.PlanificacionViewModel.DiasSemana)
+                                        {
+                                            var esFinSemana = dia == "Sabado" || dia == "Domingo";
+                                            <th class="planificacion-th-dia @(esFinSemana ? "planificacion-col-weekend" : string.Empty)" data-dia="@dia">
+                                                <strong>@dia</strong>
+                                            </th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var tipoTurno in Model.TipoTurnos)
+                                    {
+                                        var esNocturno = EsTipoTurnoNocturno(tipoTurno.HoraInicio, tipoTurno.HoraFin);
+                                        <tr data-turno-id="@tipoTurno.TipoTurnoId" data-turno-nocturno="@esNocturno.ToString().ToLowerInvariant()">
+                                            <td class="planificacion-td-turno">
+                                                <div class="planificacion-turno-info">
+                                                    <div class="planificacion-turno-head">
+                                                        <div class="planificacion-turno-nombre">@tipoTurno.NombreTurno</div>
+                                                        <button type="button"
+                                                                class="planificacion-row-detail-toggle"
+                                                                data-row-detail-turno-id="@tipoTurno.TipoTurnoId"
+                                                                aria-pressed="false"
+                                                                aria-label="Mostrar opciones del turno @tipoTurno.NombreTurno"
+                                                                title="Mostrar opciones">
+                                                            Opciones
+                                                        </button>
+                                                    </div>
+                                                    <div class="planificacion-turno-horario">
+                                                        @tipoTurno.HoraInicio.ToString("HH:mm") -
+                                                        @tipoTurno.HoraFin.ToString("HH:mm")
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            @foreach (var dia in TurneroTcs.ViewModels.PlanificacionViewModel.DiasSemana)
+                                            {
+                                                var esFinSemana = dia == "Sabado" || dia == "Domingo";
+                                                <td class="planificacion-td-cell @(esFinSemana ? "planificacion-col-weekend" : string.Empty)" data-dia="@dia" data-turno-id="@tipoTurno.TipoTurnoId">
+                                                    <div class="planificacion-cell">
+                                                        <div class="planificacion-cell-primary">
+                                                                <input type="number" class="form-control planificacion-input planificacion-cobertura-input" min="0" max="99"
+                                                                   value="0" data-dia="@dia" data-turno-id="@tipoTurno.TipoTurnoId"
+                                                                   aria-label="Numero de personas para @dia @tipoTurno.NombreTurno" />
+                                                        </div>
+                                                        <div class="planificacion-cell-detail">
+                                                            <div class="planificacion-cell-metric">
+                                                                <input type="number"
+                                                                       class="form-control planificacion-input planificacion-apoyo-input"
+                                                                       min="0"
+                                                                       max="99"
+                                                                       value="0"
+                                                                       data-apoyo-dia="@dia"
+                                                                       data-apoyo-turno-id="@tipoTurno.TipoTurnoId"
+                                                                       title="Apoyo"
+                                                                       aria-label="Numero de plazas de apoyo para @dia @tipoTurno.NombreTurno" />
+                                                            </div>
+                                                            <div class="planificacion-cell-metric">
+                                                                <button type="button"
+                                                                        id="opcional_@(dia)_@(tipoTurno.TipoTurnoId)"
+                                                                        class="planificacion-opcional-vacacion-input planificacion-flexible-toggle"
+                                                                        data-opcional-vacacion-dia="@dia"
+                                                                        data-opcional-vacacion-turno-id="@tipoTurno.TipoTurnoId"
+                                                                        title="Flexible"
+                                                                        aria-label="Turno opcional por vacaciones para @dia @tipoTurno.NombreTurno"
+                                                                        aria-pressed="false">
+                                                                    F
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="planificacionEmptyState" class="planificacion-empty">
+                    <div class="planificacion-empty-card">
+                        <svg width="64" height="64" fill="currentColor" viewBox="0 0 16 16" class="planificacion-empty-icon">
+                            <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z" />
+                        </svg>
+                        <h5>Sin grupo seleccionado</h5>
+                        <p class="text-muted">La cobertura normal por turno requiere un grupo activo. Los turnos auxiliares compartidos del equipo siguen disponibles debajo y se volveran a leer al recargar la pagina.</p>
+                    </div>
+                </div>
+
+                <details id="planificacionAuxiliarSection" class="planificacion-auxiliar-card" open>
+                    <summary>
+                        <span>Turnos auxiliares</span>
+                        <small>Cupo compartido por equipo entre los grupos que habilites.</small>
+                    </summary>
+                    <div class="planificacion-auxiliar-content">
+                        <p class="planificacion-auxiliar-note">
+                            El algoritmo llena primero la cobertura normal. Luego usa este turno como capacidad opcional compartida del equipo. El maximo diario aplica entre todos los grupos habilitados, no por grupo.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table mb-0 planificacion-auxiliar-table">
+                                <thead>
+                                    <tr>
+                                        <th>Turno</th>
+                                        <th>Desde</th>
+                                        <th>Hasta</th>
+                                        <th>Max / dia</th>
+                                        <th>Grupos habilitados</th>
+                                        <th>Estado</th>
+                                        <th class="text-end">Accion</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var tipoTurno in Model.TipoTurnos)
+                                    {
+                                        var esNocturno = EsTipoTurnoNocturno(tipoTurno.HoraInicio, tipoTurno.HoraFin);
+                                        <tr data-aux-turno-row data-turno-id="@tipoTurno.TipoTurnoId" data-turno-nocturno="@esNocturno.ToString().ToLowerInvariant()">
+                                            <td>
+                                                <div class="planificacion-turno-info">
+                                                    <div class="planificacion-turno-nombre">@tipoTurno.NombreTurno</div>
+                                                    <div class="planificacion-turno-horario">
+                                                        @tipoTurno.HoraInicio.ToString("HH:mm") -
+                                                        @tipoTurno.HoraFin.ToString("HH:mm")
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <select class="form-select planificacion-auxiliar-select"
+                                                        data-aux-desde-turno-id="@tipoTurno.TipoTurnoId"
+                                                        aria-label="Dia inicial auxiliar para @tipoTurno.NombreTurno">
+                                                    <option value="">No usar</option>
+                                                    @foreach (var dia in TurneroTcs.ViewModels.PlanificacionViewModel.DiasSemana)
+                                                    {
+                                                        <option value="@dia">@dia</option>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select class="form-select planificacion-auxiliar-select"
+                                                        data-aux-hasta-turno-id="@tipoTurno.TipoTurnoId"
+                                                        aria-label="Dia final auxiliar para @tipoTurno.NombreTurno">
+                                                    <option value="">No usar</option>
+                                                    @foreach (var dia in TurneroTcs.ViewModels.PlanificacionViewModel.DiasSemana)
+                                                    {
+                                                        <option value="@dia">@dia</option>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="number"
+                                                       class="form-control planificacion-auxiliar-input"
+                                                       min="0"
+                                                       max="99"
+                                                       step="1"
+                                                       value="0"
+                                                       data-aux-max-turno-id="@tipoTurno.TipoTurnoId"
+                                                       aria-label="Maximo diario auxiliar para @tipoTurno.NombreTurno" />
+                                            </td>
+                                            <td>
+                                                <div class="planificacion-aux-grupo-multi" data-aux-grupo-multi-turno-id="@tipoTurno.TipoTurnoId">
+                                                    <button type="button"
+                                                            class="planificacion-aux-grupo-toggle form-select planificacion-auxiliar-select"
+                                                            data-aux-grupo-toggle-turno-id="@tipoTurno.TipoTurnoId"
+                                                            aria-label="Seleccionar grupos habilitados para @tipoTurno.NombreTurno">
+                                                        <span data-aux-grupo-summary-turno-id="@tipoTurno.TipoTurnoId">Seleccionar grupos</span>
+                                                        <span class="planificacion-aux-grupo-caret">&#9662;</span>
+                                                    </button>
+                                                    <div class="planificacion-aux-grupo-menu" data-aux-grupo-menu-turno-id="@tipoTurno.TipoTurnoId">
+                                                        @foreach (var grupo in Model.Grupos)
+                                                        {
+                                                            <label class="planificacion-aux-grupo-option">
+                                                                <input type="checkbox"
+                                                                       value="@grupo.Value"
+                                                                       data-aux-grupo-check-turno-id="@tipoTurno.TipoTurnoId" />
+                                                                <span>@grupo.Text</span>
+                                                            </label>
+                                                        }
+                                                    </div>
+                                                    <select class="form-select planificacion-auxiliar-select planificacion-auxiliar-groups-select"
+                                                            multiple
+                                                            data-aux-grupos-select-turno-id="@tipoTurno.TipoTurnoId"
+                                                            aria-label="Grupos habilitados para auxiliar @tipoTurno.NombreTurno">
+                                                        @foreach (var grupo in Model.Grupos)
+                                                        {
+                                                            <option value="@grupo.Value">@grupo.Text</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="planificacion-auxiliar-status" data-aux-status-turno-id="@tipoTurno.TipoTurnoId">
+                                                    Sin configurar
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <button type="button"
+                                                        class="btn btn-link planificacion-auxiliar-clear"
+                                                        data-aux-clear-turno-id="@tipoTurno.TipoTurnoId">
+                                                    Limpiar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <div id="planificacionBlueprintContainer" class="planificacion-matriz-container" style="display:none;">
+                <div class="planificacion-callout">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+                    </svg>
+                    Define el patron semanal del grupo usando una etiqueta por persona.
+                </div>
+                <p class="planificacion-inline-help">Escribe una etiqueta y presiona Enter o + Agregar. Puedes pegar varias etiquetas separadas por coma.</p>
+                <div class="planificacion-matrix-card">
+                    <div class="table-responsive planificacion-table-wrap">
+                        <table class="table mb-0 planificacion-table" id="planificacionBlueprint">
+                            <thead>
+                                <tr>
+                                    <th class="planificacion-th-turno-label">Turno</th>
+                                    @foreach (var dia in TurneroTcs.ViewModels.PlanificacionViewModel.DiasSemana)
+                                    {
+                                        var esFinSemana = dia == "Sabado" || dia == "Domingo";
+                                        <th class="planificacion-th-dia @(esFinSemana ? "planificacion-col-weekend" : string.Empty)" data-dia="@dia">
+                                            <strong>@dia</strong>
+                                        </th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var tipoTurno in Model.TipoTurnos)
+                                {
+                                    <tr data-turno-id="@tipoTurno.TipoTurnoId">
+                                        <td class="planificacion-td-turno">
+                                            <div class="planificacion-turno-info">
+                                                <div class="planificacion-turno-nombre">@tipoTurno.NombreTurno</div>
+                                                <div class="planificacion-turno-horario">
+                                                    @tipoTurno.HoraInicio.ToString("HH:mm") -
+                                                    @tipoTurno.HoraFin.ToString("HH:mm")
+                                                </div>
+                                            </div>
+                                        </td>
+                                        @foreach (var dia in TurneroTcs.ViewModels.PlanificacionViewModel.DiasSemana)
+                                        {
+                                            var esFinSemana = dia == "Sabado" || dia == "Domingo";
+                                            <td class="planificacion-td-cell @(esFinSemana ? "planificacion-col-weekend" : string.Empty)" data-dia="@dia" data-turno-id="@tipoTurno.TipoTurnoId">
+                                                <div class="planificacion-chip-input"
+                                                     data-dia="@dia" data-turno-id="@tipoTurno.TipoTurnoId"
+                                                     aria-label="Etiquetas para @dia @tipoTurno.NombreTurno">
+                                                    <div class="planificacion-chip-list"></div>
+                                                    <input type="text" class="planificacion-chip-entry"
+                                                           placeholder="Ejemplo: T1" />
+                                                    <button type="button" class="planificacion-chip-add">+ Agregar</button>
+                                                    <input type="hidden" class="planificacion-blueprint-input"
+                                                           data-dia="@dia" data-turno-id="@tipoTurno.TipoTurnoId" />
+                                                </div>
+                                                <div class="planificacion-min-row">
+                                                    <label class="planificacion-min-label" for="min_@(dia)_@(tipoTurno.TipoTurnoId)">Min</label>
+                                                    <input type="number" id="min_@(dia)_@(tipoTurno.TipoTurnoId)"
+                                                           class="planificacion-blueprint-min form-control form-control-sm"
+                                                           data-dia="@dia" data-turno-id="@tipoTurno.TipoTurnoId"
+                                                           min="0" max="99" value="0"
+                                                           aria-label="Min personas @dia @tipoTurno.NombreTurno" />
+                                                </div>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="planificacionBlueprintEmptyState" class="planificacion-empty" style="display:none;">
+                <div class="planificacion-empty-card">
+                    <svg width="64" height="64" fill="currentColor" viewBox="0 0 16 16" class="planificacion-empty-icon">
+                        <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z" />
+                    </svg>
+                    <h5>Selecciona un grupo para comenzar</h5>
+                    <p class="text-muted">Elige un grupo y define el patrón de rotación para cada turno.</p>
+                </div>
+            </div>
+
+            <div id="planificacionFeriadoContainer" class="planificacion-matriz-container" style="display:none;">
+                <div class="planificacion-callout">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+                    </svg>
+                    Configura cuantas personas se muestran por turno cuando un dia es feriado.
+                </div>
+                <div class="planificacion-matrix-card planificacion-feriado-card">
+                    <div class="planificacion-feriado-header">
+                        <strong>Cobertura por turno</strong>
+                        <span class="text-muted">Grupo: <span data-feriado-grupo-label>-</span></span>
+                    </div>
+                    <div class="planificacion-feriado-turno" data-feriado-turno-config>
+                        @foreach (var tipoTurno in Model.TipoTurnos)
+                        {
+                            <label class="planificacion-feriado-turno-item">
+                                <span>@tipoTurno.NombreTurno</span>
+                                <input type="number"
+                                       class="form-control planificacion-feriado-input"
+                                       min="0"
+                                       max="99"
+                                       step="1"
+                                       value="0"
+                                       data-feriado-turno-id="@tipoTurno.TipoTurnoId" />
+                            </label>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div id="planificacionReemplazosContainer" class="planificacion-matriz-container planificacion-reemplazos-section" style="display:none;">
+                <div class="planificacion-callout">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5zm14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5z" />
+                    </svg>
+                    Configura que grupos pueden cubrir a <strong data-reemplazo-grupo-label>este grupo</strong> en un turno y dia especifico.
+                </div>
+                <div class="planificacion-matrix-card planificacion-reemplazo-card">
+                    <div class="planificacion-reemplazo-header">
+                        <strong>Reemplazos configurados</strong>
+                        <span class="planificacion-reemplazo-count text-muted"><span id="reemplazosCount">0</span> configurados</span>
+                    </div>
+                    <div id="reemplazosLista" class="planificacion-reemplazo-list">
+                        <p class="text-muted planificacion-reemplazo-empty">Sin reemplazos configurados.</p>
+                    </div>
+                    <div class="planificacion-reemplazo-form">
+                        <select id="reemplazanteSelect" class="form-select planificacion-reemplazo-select" aria-label="Grupo reemplazante">
+                            <option value="">-- Grupo que cubre --</option>
+                        </select>
+                        <select id="reemplazaTurnoSelect" class="form-select planificacion-reemplazo-select" aria-label="Turno">
+                            <option value="">-- Turno --</option>
+                            @foreach (var tipoTurno in Model.TipoTurnos)
+                            {
+                                <option value="@tipoTurno.TipoTurnoId">@tipoTurno.NombreTurno</option>
+                            }
+                        </select>
+                        <select id="reemplazaDiaSelect" class="form-select planificacion-reemplazo-select" aria-label="Dia">
+                            <option value="">-- Dia --</option>
+                            @foreach (var dia in TurneroTcs.ViewModels.PlanificacionViewModel.DiasSemana)
+                            {
+                                <option value="@dia">@dia</option>
+                            }
+                        </select>
+                        <button type="button" id="btnAgregarReemplazo" class="btn btn-outline-primary planificacion-reemplazo-add-btn">
+                            + Agregar
+                        </button>
+                    </div>
+                    <div class="planificacion-reemplazo-footer">
+                        <button type="button" id="btnGuardarReemplazos" class="btn btn-success planificacion-reemplazo-save-btn" disabled>
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M8.5 1.5V2H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4.5l-3-3H8.5zM3 3h5v3H3V3zm10 10H2V7h11v6zm-2-5h-2v4h2V8z"/>
+                            </svg>
+                            Guardar reemplazos
+                        </button>
+                        <span id="reemplazaSaveState" class="planificacion-save-state" aria-live="polite">Sin cambios</span>
+                    </div>
+                </div>
+            </div>
+
+            <details class="planificacion-tips">
+                <summary>Buenas practicas</summary>
+                <p class="planificacion-tips-note">
+                    Ajusta primero la configuracion V2 del equipo, luego define cobertura, apoyo, opcionales por vacaciones, auxiliares y feriados antes de generar.
+                </p>
+                <ul>
+                    <li>Evita dejar turnos en 0 si requieren cobertura.</li>
+                    <li>Usa apoyo y auxiliares para absorber faltantes, no para esconder sobrecobertura.</li>
+                    <li>Guarda configuracion V2 y cobertura antes de generar los turnos.</li>
+                </ul>
+            </details>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="planificacionDiscardModal" tabindex="-1" aria-labelledby="planificacionDiscardLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content planificacion-confirm-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="planificacionDiscardLabel">Descartar cambios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="planificacion-confirm-content">
+                    <span class="planificacion-confirm-icon" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" role="img" focusable="false" aria-hidden="true">
+                            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.963 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.707c.89 0 1.438-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2" />
+                        </svg>
+                    </span>
+                    <p class="modal-message" data-discard-message>
+                        Hay cambios sin guardar. Si continuas, se perderan.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Seguir editando</button>
+                <button type="button" class="btn btn-danger" data-discard-confirm>Descartar</button>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TurneroTcs</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <link rel="stylesheet" href="~/css/app-calendar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/TurneroTcs.styles.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var isHome = currentController == "Home";
+        var isCalendario = currentController == "Calendario";
+        var isHorasMensuales = currentController == "HorasMensuales";
+        var isVacaciones = currentController == "Vacaciones";
+        var isSolicitudes = currentController == "Solicitudes";
+        var isEquipo = currentController == "Equipo";
+        var isPersona = currentController == "Persona";
+        var isTipoTurno = currentController == "TipoTurno";
+        var isFeriado = currentController == "Feriado";
+        var isPermisoAcceso = currentController == "PermisoAcceso";
+        var isGestion = isEquipo || isPersona || isTipoTurno || isFeriado || isPermisoAcceso;
+    }
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark border-bottom box-shadow mb-3 app-navbar">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">TurneroTcs</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link app-nav-link @(isHome ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        @if (User?.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link app-nav-link @(isCalendario ? "active" : "")" asp-area="" asp-controller="Calendario" asp-action="Index">Calendario</a>
+                            </li>
+                        }
+                        @if (User?.Identity?.IsAuthenticated == true &&
+                             (User?.IsInRole("SuperAdmin") == true ||
+                              User?.IsInRole("Admin") == true ||
+                              User?.IsInRole("Lider") == true ||
+                              User?.IsInRole("Usuario") == true))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link app-nav-link @(isHorasMensuales ? "active" : "")" asp-area="" asp-controller="HorasMensuales" asp-action="Index">Horas mensuales</a>
+                            </li>
+                        }
+                        @if (User?.Identity?.IsAuthenticated == true &&
+                             (User?.IsInRole("SuperAdmin") == true ||
+                              User?.IsInRole("Admin") == true ||
+                              User?.IsInRole("Lider") == true ||
+                              User?.IsInRole("Usuario") == true))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link app-nav-link @(isVacaciones ? "active" : "")" asp-area="" asp-controller="Vacaciones" asp-action="Index">Vacaciones</a>
+                            </li>
+                        }
+                        @if (User?.Identity?.IsAuthenticated == true &&
+                             (User?.IsInRole("SuperAdmin") == true ||
+                              User?.IsInRole("Admin") == true ||
+                              User?.IsInRole("Lider") == true ||
+                              User?.IsInRole("Usuario") == true))
+                        {
+                            var solicitudesLabel = User?.IsInRole("Usuario") == true ? "Mis Solicitudes" : "Solicitudes";
+                            <li class="nav-item">
+                                <a class="nav-link app-nav-link @(isSolicitudes ? "active" : "")" asp-area="" asp-controller="Solicitudes" asp-action="Index">@solicitudesLabel</a>
+                            </li>
+                        }
+                        @if (User?.Identity?.IsAuthenticated == true &&
+                             (User?.IsInRole("SuperAdmin") == true ||
+                              User?.IsInRole("Admin") == true ||
+                              User?.IsInRole("Lider") == true))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle app-nav-link @(isGestion ? "active" : "")" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Gestion
+                                </a>
+                                <ul class="dropdown-menu app-nav-dropdown">
+                                    <li><a class="dropdown-item @(isEquipo ? "active" : "")" asp-area="" asp-controller="Equipo" asp-action="Index">Equipos y grupos</a></li>
+                                    <li><a class="dropdown-item @(isPersona ? "active" : "")" asp-area="" asp-controller="Persona" asp-action="Index">Personas</a></li>
+                                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("Admin"))
+                                    {
+                                        <li><a class="dropdown-item @(isTipoTurno ? "active" : "")" asp-area="" asp-controller="TipoTurno" asp-action="Index">Tipos de turno</a></li>
+                                        <li><a class="dropdown-item @(isFeriado ? "active" : "")" asp-area="" asp-controller="Feriado" asp-action="Index">Feriados</a></li>
+                                        <li><a class="dropdown-item @(isPermisoAcceso ? "active" : "")" asp-area="" asp-controller="PermisoAcceso" asp-action="Index">Permisos de acceso</a></li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                    </ul>
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+    <div class="app-toast-host toast-container position-fixed top-0 end-0 p-3" data-app-toast-host aria-live="polite" aria-atomic="true"></div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2026 - TurneroTcs
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/app-toast.js" asp-append-version="true"></script>
+    <script src="~/js/app-select.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="~/js/app-calendar.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

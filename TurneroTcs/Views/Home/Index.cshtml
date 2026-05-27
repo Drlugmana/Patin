@@ -1,0 +1,210 @@
+﻿@model TurneroTcs.ViewModels.HomeIndexViewModel
+@using System
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Turnero | Home";
+    var es = new CultureInfo("es-ES");
+    var totalImpactoPersonas = Model.VacacionesImpacto.Sum(x => x.PersonasAfectadas);
+    var totalDiasPersona = Model.VacacionesImpacto.Sum(x => x.DiasPersona);
+    var equiposConImpacto = Model.VacacionesImpacto
+        .Select(x => x.Equipo)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .Count();
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/home-index.css" asp-append-version="true" />
+}
+
+<div class="home-page py-4">
+    @if (!Model.IsAdminDashboard)
+    {
+        <div class="home-card home-welcome">
+            <h1 class="home-title">TurneroTcs</h1>
+            <p class="home-subtitle">Gestiona turnos, vacaciones y solicitudes desde un solo lugar.</p>
+            <div class="home-welcome-actions">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-controller="Calendario" asp-action="Index" class="btn app-btn-primary">Abrir calendario</a>
+                    <a asp-controller="Solicitudes" asp-action="Index" class="btn app-btn-secondary">Ver solicitudes</a>
+                }
+                else
+                {
+                    <a asp-area="Identity" asp-page="/Account/Login" class="btn app-btn-primary">Iniciar sesion</a>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="home-header mb-3">
+            <div>
+                <h1 class="home-title">Panel de operacion</h1>
+                <p class="home-subtitle">Resumen rapido para aprobaciones, impacto de vacaciones y feriados proximos.</p>
+            </div>
+            <div class="home-header-actions">
+                <a asp-controller="Solicitudes" asp-action="Index" class="btn app-btn-secondary">Abrir solicitudes</a>
+                <a asp-controller="Feriado" asp-action="Index" class="btn app-btn-primary">Gestionar feriados</a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12 col-xxl-4">
+                <section class="home-card h-100">
+                    <div class="home-section-header">
+                        <div>
+                            <h2>Solicitudes pendientes</h2>
+                            <p>Cola priorizada por antiguedad.</p>
+                        </div>
+                        <span class="home-chip">@Model.PendingSolicitudesCount</span>
+                    </div>
+
+                    @if (Model.PendingSolicitudes.Count == 0)
+                    {
+                        <div class="home-empty">No hay solicitudes pendientes.</div>
+                    }
+                    else
+                    {
+                        <ul class="home-pending-list">
+                            @foreach (var item in Model.PendingSolicitudes)
+                            {
+                                var ageClass = item.DiasAbierta >= 7 ? "is-critical" : item.DiasAbierta >= 3 ? "is-warning" : "is-fresh";
+                                <li class="home-pending-item">
+                                    <div class="home-pending-main">
+                                        <strong>@item.Solicitante</strong>
+                                        <span>@item.TipoSolicitud · @item.Equipo</span>
+                                    </div>
+                                    <div class="home-pending-meta">
+                                        <span class="home-status-chip">@item.Estado</span>
+                                        <span class="home-age-chip @ageClass">@item.DiasAbierta d</span>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
+            </div>
+
+            <div class="col-12 col-xxl-8">
+                <section class="home-card h-100">
+                    <div class="home-section-header">
+                        <div>
+                            <h2>Control de feriados</h2>
+                            <p>@Model.FeriadoWindowStart.ToString("dd MMM", es) - @Model.FeriadoWindowEnd.ToString("dd MMM yyyy", es)</p>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <h3 class="home-subsection-title">Feriados proximos</h3>
+                            @if (Model.FeriadosProximos.Count == 0)
+                            {
+                                <div class="home-empty">No hay feriados en la ventana actual.</div>
+                            }
+                            else
+                            {
+                                <div class="home-feriado-list">
+                                    @foreach (var feriado in Model.FeriadosProximos)
+                                    {
+                                        <article class="home-feriado-item">
+                                            <div>
+                                                <strong>@feriado.Nombre</strong>
+                                                <div class="home-muted">@feriado.Inicio.ToString("dd MMM", es) - @feriado.Fin.ToString("dd MMM yyyy", es)</div>
+                                            </div>
+                                            <div class="home-feriado-flags">
+                                                @if (feriado.EnCurso)
+                                                {
+                                                    <span class="home-small-chip is-live">En curso</span>
+                                                }
+                                                <span class="home-small-chip">@feriado.Dias d</span>
+                                            </div>
+                                        </article>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="col-12">
+                <section class="home-card">
+                    <div class="home-section-header">
+                        <div>
+                            <h2>Impacto de vacaciones (14 dias)</h2>
+                            <p>@Model.VacacionesImpactStart.ToString("dd MMM", es) - @Model.VacacionesImpactEnd.ToString("dd MMM yyyy", es)</p>
+                        </div>
+                        <div class="home-kpis">
+                            <div class="home-kpi">
+                                <span>Equipos</span>
+                                <strong>@equiposConImpacto</strong>
+                            </div>
+                            <div class="home-kpi">
+                                <span>Personas</span>
+                                <strong>@totalImpactoPersonas</strong>
+                            </div>
+                            <div class="home-kpi">
+                                <span>Dias-persona</span>
+                                <strong>@totalDiasPersona</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.VacacionesImpacto.Count == 0)
+                    {
+                        <div class="home-empty">Sin vacaciones aprobadas en la ventana seleccionada.</div>
+                    }
+                    else
+                    {
+                        @if (Model.VacacionesPicos.Count > 0)
+                        {
+                            <div class="home-peaks">
+                                @foreach (var peak in Model.VacacionesPicos)
+                                {
+                                    <span class="home-small-chip is-peak">@peak.Fecha.ToString("dd MMM", es): @peak.PersonasAfectadas</span>
+                                }
+                            </div>
+                        }
+
+                        <div class="table-responsive mt-2">
+                            <table class="table mb-0 home-impact-table">
+                                <thead>
+                                    <tr>
+                                        <th>Equipo</th>
+                                        <th>Grupo</th>
+                                        <th class="text-end">Personas</th>
+                                        <th class="text-end">Dias-persona</th>
+                                        <th>Pico</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var impact in Model.VacacionesImpacto)
+                                    {
+                                        <tr>
+                                            <td>@impact.Equipo</td>
+                                            <td>@impact.Grupo</td>
+                                            <td class="text-end fw-semibold">@impact.PersonasAfectadas</td>
+                                            <td class="text-end fw-semibold">@impact.DiasPersona</td>
+                                            <td>
+                                                @if (impact.DiaPico.HasValue)
+                                                {
+                                                    <span class="home-muted">@impact.DiaPico.Value.ToString("dd MMM", es) (@impact.PersonasDiaPico)</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="home-muted">-</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </section>
+            </div>
+        </div>
+    }
+</div>
+
