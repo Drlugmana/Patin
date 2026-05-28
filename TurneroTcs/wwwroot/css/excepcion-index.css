@@ -1,0 +1,98 @@
+.excepcion-name-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.excepcion-row.is-editing {
+  background: rgba(31, 77, 70, 0.08);
+}
+
+.excepcion-edit-row {
+  display: none;
+}
+
+.excepcion-edit-row.is-open {
+  display: table-row;
+}
+
+.excepcion-edit-panel {
+  padding: 1.2rem 1.4rem;
+  background: rgba(31, 77, 70, 0.06);
+  border-radius: 18px;
+  border: 1px solid rgba(31, 77, 70, 0.15);
+  box-shadow: 0 12px 26px rgba(21, 30, 34, 0.08);
+}
+
+.excepcion-edit-header {
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.excepcion-edit-grid {
+  margin-bottom: 1rem;
+}
+
+.excepcion-edit-label {
+  font-weight: 600;
+}
+
+.excepcion-edit-input {
+  border-radius: 12px;
+}
+
+.excepcion-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.excepcion-inline-save,
+.excepcion-inline-cancel {
+  display: none;
+}
+
+.excepcion-edit-row .excepcion-inline-save,
+.excepcion-edit-row .excepcion-inline-cancel {
+  display: inline-flex;
+}
+
+.excepcion-inline-status {
+  display: none;
+  margin-left: 0.6rem;
+  font-size: 0.8rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.excepcion-inline-status.is-visible {
+  display: inline-flex;
+  opacity: 1;
+}
+
+.excepcion-expand-btn,
+.excepcion-delete-btn {
+  border-radius: 999px;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.excepcion-expand-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.excepcion-row.is-editing .excepcion-expand-btn svg,
+.excepcion-expand-btn.is-open svg {
+  transform: rotate(180deg);
+}
+
+.excepcion-delete-btn {
+  margin-left: 0.35rem;
+}

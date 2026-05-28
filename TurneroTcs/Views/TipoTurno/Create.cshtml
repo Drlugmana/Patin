@@ -1,0 +1,56 @@
+@model TurneroTcs.ViewModels.TipoTurnoViewModel
+@{
+    ViewData["Title"] = "Turnero | Crear Tipo de Turno";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/tipo-turno-create.css" asp-append-version="true" />
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm turno-create-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <span class="badge bg-primary-subtle text-primary border border-primary turno-create-badge">Nuevo</span>
+                        </div>
+                        <div>
+                            <h2 class="h4 mb-1 turno-create-title">Crear tipo de turno</h2>
+                            <div class="text-muted turno-create-subtitle">Define un nuevo rango horario</div>
+                        </div>
+                    </div>
+
+                    <form asp-action="Create" method="post" class="mt-3">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="NombreTurno" class="form-label turno-create-label"></label>
+                            <input asp-for="NombreTurno" class="form-control turno-create-input" />
+                            <span asp-validation-for="NombreTurno" class="text-danger"></span>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="HoraInicio" class="form-label turno-create-label"></label>
+                                <input asp-for="HoraInicio" type="time" class="form-control turno-create-input" />
+                                <span asp-validation-for="HoraInicio" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="HoraFin" class="form-label turno-create-label"></label>
+                                <input asp-for="HoraFin" type="time" class="form-control turno-create-input" />
+                                <span asp-validation-for="HoraFin" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a asp-action="Index" class="btn btn-outline-secondary turno-create-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary turno-create-primary">Crear</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

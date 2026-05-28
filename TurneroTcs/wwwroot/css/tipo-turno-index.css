@@ -1,0 +1,236 @@
+:root {
+  --turno-ink: #1e252b;
+  --turno-muted: #66737f;
+  --turno-accent: #1f4d46;
+  --turno-border: rgba(30, 37, 43, 0.12);
+  --turno-card: rgba(255, 255, 255, 0.78);
+  --turno-shadow: 0 18px 50px rgba(21, 30, 34, 0.16);
+}
+
+body {
+  background: radial-gradient(circle at top, #f7f5ef 0%, #eef2f5 45%, #e9f0ef 100%);
+  color: var(--turno-ink);
+}
+
+.turno-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.turno-subtitle {
+  color: var(--turno-muted);
+}
+
+.turno-cta {
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+}
+
+.turno-card {
+  border-radius: 22px;
+  border: 1px solid var(--turno-border);
+  background: var(--turno-card);
+  box-shadow: var(--turno-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.turno-table-wrap {
+  border-radius: 22px;
+}
+
+.turno-table thead {
+  background: rgba(31, 77, 70, 0.06);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--turno-muted);
+}
+
+.turno-table thead th {
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--turno-border);
+}
+
+.turno-table td {
+  padding: 1rem 1.2rem;
+  border-top: 1px solid rgba(31, 77, 70, 0.08);
+}
+
+.turno-row {
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.turno-row:hover {
+  background: rgba(31, 77, 70, 0.06);
+  transform: translateY(-1px);
+}
+
+.turno-cell {
+  display: inline-block;
+}
+
+.turno-name-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.turno-row.is-editing {
+  background: rgba(31, 77, 70, 0.08);
+}
+
+.turno-edit-row {
+  display: none;
+}
+
+.turno-edit-row.is-open {
+  display: table-row;
+}
+
+.turno-edit-panel {
+  padding: 1.2rem 1.4rem;
+  background: rgba(31, 77, 70, 0.06);
+  border-radius: 18px;
+  border: 1px solid rgba(31, 77, 70, 0.15);
+  box-shadow: 0 12px 26px rgba(21, 30, 34, 0.08);
+}
+
+.turno-edit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.turno-edit-grid {
+  margin-bottom: 1rem;
+}
+
+.turno-edit-label {
+  font-weight: 600;
+  color: var(--turno-ink);
+}
+
+.turno-edit-input {
+  border-radius: 12px;
+  border: 1px solid rgba(31, 77, 70, 0.2);
+  box-shadow: 0 8px 16px rgba(31, 77, 70, 0.08);
+  padding: 0.45rem 0.6rem;
+}
+
+.turno-edit-input:focus {
+  border-color: rgba(31, 77, 70, 0.45);
+  box-shadow: 0 0 0 3px rgba(31, 77, 70, 0.18);
+}
+
+.turno-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.turno-inline-save,
+.turno-inline-cancel {
+  display: none;
+}
+
+.turno-edit-row .turno-inline-save,
+.turno-edit-row .turno-inline-cancel {
+  display: inline-flex;
+}
+
+.turno-inline-status {
+  display: none;
+  margin-left: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--turno-muted);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.turno-inline-status.is-visible {
+  display: inline-flex;
+  opacity: 1;
+}
+
+.turno-expand-btn {
+  border-radius: 999px;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border-color: rgba(31, 77, 70, 0.25);
+  color: rgba(31, 77, 70, 0.75);
+}
+
+.turno-expand-btn span {
+  display: inline-block;
+  line-height: 1;
+}
+
+.turno-expand-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.turno-row.is-editing .turno-expand-btn svg,
+.turno-expand-btn.is-open svg {
+  transform: rotate(180deg);
+}
+
+.turno-delete-btn {
+  margin-left: 0.35rem;
+  border-radius: 999px;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.turno-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--turno-muted);
+}
+
+.turno-edit-switch.form-switch {
+  padding-left: 2.6rem;
+}
+
+.turno-edit-switch .form-check-input {
+  margin-left: -2.6rem;
+  background-color: rgba(31, 77, 70, 0.2);
+  border-color: rgba(31, 77, 70, 0.35);
+}
+
+.turno-edit-switch .form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(31, 77, 70, 0.2);
+}
+
+.turno-edit-switch .form-check-input:checked {
+  background-color: var(--turno-accent);
+  border-color: var(--turno-accent);
+}
+
+.turno-edit-switch span {
+  margin-left: 0.35rem;
+}
+
+@media (max-width: 768px) {
+  .turno-table thead {
+    font-size: 0.65rem;
+  }
+
+  .turno-cta {
+    width: 100%;
+  }
+}

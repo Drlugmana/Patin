@@ -1,0 +1,94 @@
+@{
+    ViewData["Title"] = "Turnero | Permisos por usuario";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/permiso-usuario-index.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/permiso-usuario-index.js" asp-append-version="true"></script>
+}
+
+<form id="permiso-usuario-token" method="post" style="display:none">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="container py-4 permiso-usuario-page">
+    <div class="permiso-usuario-controls mb-3">
+        <div class="permiso-usuario-controls-left">
+            <div class="permiso-usuario-filter-field permiso-usuario-filter-field--user">
+                <label class="permiso-usuario-label" for="permisoUsuarioUser">Usuario</label>
+                <select id="permisoUsuarioUser" class="form-select permiso-usuario-input" data-user-select>
+                    <option value="">Selecciona usuario</option>
+                </select>
+            </div>
+            <div class="permiso-usuario-filter-field permiso-usuario-filter-field--search">
+                <label class="permiso-usuario-label" for="permisoUsuarioSearch">Buscar</label>
+                <input id="permisoUsuarioSearch"
+                       type="text"
+                       class="form-control permiso-usuario-input"
+                       placeholder="Codigo o nombre"
+                       data-filter-search />
+            </div>
+            <div class="permiso-usuario-filter-field">
+                <label class="permiso-usuario-label" for="permisoUsuarioModulo">Modulo</label>
+                <select id="permisoUsuarioModulo" class="form-select permiso-usuario-input" data-filter-modulo>
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="permiso-usuario-filter-field">
+                <label class="permiso-usuario-label" for="permisoUsuarioEffective">Acceso actual</label>
+                <select id="permisoUsuarioEffective" class="form-select permiso-usuario-input" data-filter-effective>
+                    <option value="">Todos</option>
+                    <option value="allow">Permitido</option>
+                    <option value="deny">Denegado</option>
+                </select>
+            </div>
+            <div class="permiso-usuario-filter-field">
+                <label class="permiso-usuario-label" for="permisoUsuarioDirect">Regla personal</label>
+                <select id="permisoUsuarioDirect" class="form-select permiso-usuario-input" data-filter-direct>
+                    <option value="">Todos</option>
+                    <option value="none">Sin asignacion</option>
+                    <option value="allow">Permitido</option>
+                    <option value="deny">Denegado</option>
+                </select>
+            </div>
+            <div class="permiso-usuario-filter-field permiso-usuario-filter-actions">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-filter-clear>
+                    Limpiar
+                </button>
+            </div>
+        </div>
+        <div class="permiso-usuario-controls-actions">
+            <a asp-action="Index" class="btn btn-outline-secondary permiso-usuario-back-btn">Permisos de acceso</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm permiso-usuario-card">
+        <div class="card-body p-0">
+            <div class="table-responsive permiso-usuario-table-wrap">
+                <table class="table align-middle mb-0 permiso-usuario-table">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Nombre</th>
+                            <th>Modulo</th>
+                            <th>Por rol</th>
+                            <th>Regla personal</th>
+                            <th>Acceso actual</th>
+                            <th class="text-end">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody data-permisos-usuario-body>
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                Selecciona un usuario para gestionar permisos.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

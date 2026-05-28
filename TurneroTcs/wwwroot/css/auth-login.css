@@ -1,0 +1,61 @@
+.login-shell {
+  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  background: radial-gradient(circle at top, #f7f5ef 0%, #eef2f5 45%, #e9f0ef 100%);
+}
+
+.auth-layout {
+  margin-bottom: 0;
+}
+
+.auth-layout .login-shell {
+  min-height: 100vh;
+}
+
+.login-card-wrap {
+  width: min(100%, 24rem);
+}
+
+.login-card {
+  border-radius: 22px;
+  border: 1px solid rgba(31, 77, 70, 0.15);
+  box-shadow: 0 20px 40px rgba(21, 30, 34, 0.18);
+}
+
+.login-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.72rem;
+  color: #2c6b62;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.login-title {
+  color: #1f4d46;
+  font-weight: 700;
+}
+
+.login-subtitle {
+  font-size: 0.95rem;
+}
+
+.login-card .form-control {
+  border-radius: 12px;
+  border: 1px solid rgba(31, 77, 70, 0.2);
+}
+
+.login-card .form-control:focus {
+  border-color: rgba(31, 77, 70, 0.5);
+  box-shadow: 0 0 0 3px rgba(44, 107, 98, 0.2);
+}
+
+.login-card .app-btn-primary {
+  border-radius: 999px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+}

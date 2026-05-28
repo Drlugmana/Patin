@@ -1,0 +1,631 @@
+:root {
+  --horas-ink: #1e252b;
+  --horas-muted: #6c7781;
+  --horas-accent: #1f4d46;
+  --horas-border: rgba(30, 37, 43, 0.12);
+  --horas-panel: rgba(255, 255, 255, 0.9);
+  --horas-shadow: 0 18px 40px rgba(21, 30, 34, 0.12);
+}
+
+.horas-shell {
+  color: var(--horas-ink);
+}
+
+.horas-filters {
+  position: relative;
+  z-index: 30;
+}
+
+.horas-card {
+  position: relative;
+  z-index: 1;
+}
+
+.horas-title {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.horas-subtitle {
+  color: var(--horas-muted);
+}
+
+.horas-range-inline {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.horas-range-inline-label {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--horas-muted);
+  font-weight: 700;
+}
+
+.horas-range-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.horas-range-field {
+  display: grid;
+  gap: 0.45rem;
+  position: relative;
+}
+
+.horas-range-field-full {
+  max-width: 100%;
+}
+
+.horas-month-picker {
+  position: relative;
+}
+
+.horas-month-picker.is-open {
+  z-index: 40;
+}
+
+.horas-month-trigger {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+  color: var(--horas-ink);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.horas-month-trigger:focus,
+.horas-month-trigger:focus-visible {
+  outline: none;
+}
+
+.horas-month-trigger-main {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.horas-month-trigger-label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--horas-muted);
+}
+
+.horas-month-trigger-value {
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: var(--horas-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.horas-month-trigger.is-empty .horas-month-trigger-value {
+  color: var(--horas-muted);
+  font-weight: 400;
+}
+
+.horas-month-trigger-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--horas-muted);
+  flex-shrink: 0;
+}
+
+.horas-month-trigger-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.horas-month-popover {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  left: 0;
+  right: 0;
+  min-width: 320px;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(31, 77, 70, 0.16);
+  background:
+    radial-gradient(circle at top right, rgba(31, 77, 70, 0.12), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(244, 249, 247, 0.98));
+  box-shadow: 0 28px 48px rgba(21, 30, 34, 0.18);
+  z-index: 50;
+}
+
+.horas-month-popover-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.95rem;
+}
+
+.horas-month-popover-title {
+  display: grid;
+  gap: 0.15rem;
+  text-align: center;
+}
+
+.horas-month-popover-kicker {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--horas-muted);
+  font-weight: 700;
+}
+
+.horas-month-popover-title strong {
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+.horas-month-nav {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(31, 77, 70, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--horas-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 18px rgba(31, 77, 70, 0.08);
+}
+
+.horas-month-nav:hover {
+  background: rgba(31, 77, 70, 0.08);
+}
+
+.horas-month-nav svg {
+  width: 16px;
+  height: 16px;
+}
+
+.horas-month-grid-picker {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.horas-month-option {
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(31, 77, 70, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--horas-ink);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease;
+}
+
+.horas-month-option:hover {
+  transform: translateY(-1px);
+  border-color: rgba(31, 77, 70, 0.22);
+  background: rgba(31, 77, 70, 0.08);
+}
+
+.horas-month-option.is-selected {
+  background: linear-gradient(180deg, #1f4d46, #163a35);
+  border-color: #163a35;
+  color: #fff;
+  box-shadow:
+    0 14px 26px rgba(31, 77, 70, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.horas-month-popover-footer {
+  margin-top: 0.9rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(30, 37, 43, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.horas-month-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--horas-muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.horas-month-link:hover {
+  color: var(--horas-ink);
+}
+
+.horas-month-link-primary {
+  color: var(--horas-accent);
+}
+
+.horas-range-arrow {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(31, 77, 70, 0.1);
+  color: var(--horas-accent);
+  box-shadow: inset 0 0 0 1px rgba(31, 77, 70, 0.12);
+}
+
+.horas-range-arrow svg {
+  width: 18px;
+  height: 18px;
+}
+
+.horas-range-arrow-compact {
+  width: 34px;
+  height: 34px;
+  align-self: end;
+}
+
+.horas-range-arrow-compact svg {
+  width: 16px;
+  height: 16px;
+}
+
+.horas-filter-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.horas-clear-icon {
+  flex-shrink: 0;
+}
+
+.horas-clear-icon svg {
+  display: block;
+}
+
+.horas-table-responsive {
+  overflow: visible;
+}
+
+.horas-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  box-shadow: inset 0 -1px 0 var(--horas-border);
+  vertical-align: middle;
+  padding: 12px 8px !important;
+  max-width: 90px;
+}
+
+.horas-table thead th:nth-child(1) {
+  max-width: 50px;
+  width: 50px;
+  padding: 12px 4px !important;
+}
+
+.horas-table thead th:nth-child(2) {
+  text-align: left;
+  max-width: 250px;
+  width: 250px;
+}
+
+.horas-toggle-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  padding: 0;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.horas-toggle-icon {
+  transition: transform 0.18s ease;
+}
+
+.horas-toggle-btn[aria-expanded="true"] .horas-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.horas-persona {
+  font-weight: 600;
+}
+
+.horas-col {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.horas-col-header {
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: 1.4;
+}
+
+.app-data-header-label {
+  display: block;
+}
+
+.horas-col-total {
+  font-weight: 700;
+  color: var(--horas-ink);
+}
+
+.horas-col-night {
+  color: #1f4d46;
+  font-weight: 600;
+  background: rgba(31, 77, 70, 0.04);
+}
+
+.horas-col-weekend {
+  color: #355264;
+  font-weight: 600;
+  background: rgba(53, 82, 100, 0.06);
+}
+
+.horas-sortable-header {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  cursor: pointer;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.horas-sortable-header:hover {
+  opacity: 0.7;
+}
+
+.horas-sortable-header:focus {
+  outline: 2px solid rgba(30, 37, 43, 0.3);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.horas-sortable-header.horas-sortable-active {
+  opacity: 1;
+  font-weight: 700;
+}
+
+.horas-sort-icon {
+  transition: transform 0.18s ease;
+  flex-shrink: 0;
+}
+
+.horas-sort-asc {
+  transform: rotate(180deg);
+}
+
+.horas-col-extra {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.horas-col-holiday {
+  color: #355264;
+  font-weight: 600;
+  background: rgba(53, 82, 100, 0.08);
+}
+
+.horas-col-muted {
+  color: var(--horas-muted);
+  font-weight: 500;
+}
+
+.horas-row.is-expanded > td {
+  background: rgba(31, 77, 70, 0.04);
+}
+
+.horas-detail.is-expanded > td {
+  background: rgba(31, 77, 70, 0.02);
+}
+
+.horas-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.horas-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--horas-border);
+  background: rgba(31, 77, 70, 0.06);
+  font-size: 0.72rem;
+  color: var(--horas-muted);
+  white-space: nowrap;
+}
+
+.horas-pill-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.6rem;
+}
+
+.horas-pill-value {
+  font-weight: 600;
+  color: var(--horas-ink);
+}
+
+.horas-pill-extra {
+  border-color: rgba(192, 57, 43, 0.35);
+  background: rgba(192, 57, 43, 0.08);
+}
+
+.horas-pill-extra .horas-pill-value {
+  color: #c0392b;
+}
+
+.horas-extra {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.horas-detail {
+  background: rgba(31, 77, 70, 0.04);
+}
+
+.horas-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 0.8rem;
+  padding: 0.8rem;
+}
+
+.detail-week {
+  border: 1px solid var(--horas-border);
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  background: #fff;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.detail-week-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.detail-week-date {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--horas-ink);
+}
+
+.detail-week-link {
+  border-radius: 10px;
+  padding-inline: 0.75rem;
+  white-space: nowrap;
+}
+
+.detail-week-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.detail-week-stat {
+  border: 1px solid var(--horas-border);
+  border-radius: 10px;
+  background: rgba(31, 77, 70, 0.04);
+  padding: 0.45rem 0.55rem;
+  display: grid;
+  gap: 0.2rem;
+  align-content: center;
+}
+
+.detail-week-stat-label {
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--horas-muted);
+}
+
+.detail-week-stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--horas-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-week-stat-value-extra {
+  color: #c0392b;
+}
+
+.detail-week-extra-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.detail-week-extra-title {
+  font-size: 0.78rem;
+  color: var(--horas-muted);
+}
+
+.detail-week-extra-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(192, 57, 43, 0.08);
+  border: 1px solid rgba(192, 57, 43, 0.2);
+  color: #8f2f25;
+  font-size: 0.76rem;
+}
+
+.detail-week-extra-empty {
+  font-size: 0.78rem;
+  color: var(--horas-muted);
+}
+
+@media (max-width: 768px) {
+  .horas-range-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .horas-range-arrow {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+
+  .horas-range-inline {
+    gap: 0.75rem;
+  }
+
+  .horas-month-popover {
+    min-width: 0;
+  }
+
+  .horas-month-grid-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .detail-week-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .detail-week-link {
+    width: 100%;
+  }
+
+  .detail-week-stats {
+    grid-template-columns: 1fr;
+  }
+}

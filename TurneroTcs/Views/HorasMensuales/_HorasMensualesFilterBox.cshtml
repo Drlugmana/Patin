@@ -1,0 +1,77 @@
+@model TurneroTcs.ViewModels.HorasMensualesViewModel
+
+@{
+    var formAction = (ViewData["FilterAction"] as string ?? "Index").Trim();
+    var currentSortField = (ViewData["SortField"] as string ?? string.Empty).Trim().ToLowerInvariant();
+    var currentSortDirection = (ViewData["SortDirection"] as string ?? "asc").Trim().ToLowerInvariant();
+    var personas = Model.Personas.ToList();
+}
+
+<form method="get" asp-action="@formAction" class="horas-filters app-data-filters mb-4" data-horas-filters>
+    <input type="hidden" name="page" value="@Model.Page" />
+    <input type="hidden" name="pageSize" value="@Model.PageSize" />
+    <input type="hidden" name="sortField" value="@currentSortField" />
+    <input type="hidden" name="sortDirection" value="@currentSortDirection" />
+    <div class="row g-3 align-items-end">
+        <div class="@(Model.ShowAdvancedFilters ? "col-lg-3" : "col-lg-12")">
+            <div class="horas-range-inline">
+                <div class="horas-range-grid horas-range-grid-compact">
+                    <input id="fromDate" name="fromDate" type="hidden" value="@Model.FromDate" />
+                    <input id="toDate" name="toDate" type="hidden" value="@Model.ToDate" />
+                    <div class="horas-range-field horas-range-field-full">
+                        <label class="app-data-filter-label" for="dateRange">Rango de fechas</label>
+                        <input id="dateRange"
+                               type="text"
+                               class="form-control app-data-filter-select"
+                               value="@($"{Model.FromDate} - {Model.ToDate}")"
+                               placeholder="Selecciona un rango"
+                               data-horas-date-range
+                               data-app-calendar="false"
+                               readonly />
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (Model.ShowAdvancedFilters)
+        {
+            <div class="col-lg-3">
+                <label class="form-label horas-filter-label app-data-filter-label" for="equipoId">Equipo</label>
+                <select id="equipoId" name="equipoId" class="form-select horas-filter-select app-data-filter-select">
+                    <option value="">Todos</option>
+                    @foreach (var equipo in Model.Equipos)
+                    {
+                        <option value="@equipo.Value" selected="@(equipo.Selected ? "selected" : null)">@equipo.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label horas-filter-label app-data-filter-label" for="grupoId">Grupo</label>
+                <select id="grupoId" name="grupoId" class="form-select horas-filter-select app-data-filter-select">
+                    <option value="">Todos</option>
+                    @foreach (var grupo in Model.Grupos)
+                    {
+                        <option value="@grupo.Value" selected="@(grupo.Selected ? "selected" : null)">@grupo.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label horas-filter-label app-data-filter-label" for="personaId">Persona</label>
+                <div class="horas-filter-inline">
+                    <select id="personaId" name="personaId" class="form-select horas-filter-select app-data-filter-select">
+                        <option value="">Todas</option>
+                        @foreach (var persona in personas)
+                        {
+                            <option value="@persona.Value" selected="@(persona.Selected ? "selected" : null)">@persona.Text</option>
+                        }
+                    </select>
+                    <a asp-action="@formAction" class="btn btn-outline-secondary horas-clear-icon app-data-filter-clear app-data-filter-clear-icon" title="Limpiar filtros" aria-label="Limpiar filtros">
+                        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7L3 5z"/>
+                            <path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M16.24 16.24 20 20m-3.76 0L20 16.24"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</form>

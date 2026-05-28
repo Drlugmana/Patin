@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TurneroTcs", "TurneroTcs.csproj", "{EBB66D85-8BCF-D8BB-F0A4-F4F355842100}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TurneroTcs.Tests", "Tests\TurneroTcs.Tests\TurneroTcs.Tests.csproj", "{99B507C3-1884-4B27-9CFA-68425B9DA4B1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EBB66D85-8BCF-D8BB-F0A4-F4F355842100}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBB66D85-8BCF-D8BB-F0A4-F4F355842100}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBB66D85-8BCF-D8BB-F0A4-F4F355842100}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBB66D85-8BCF-D8BB-F0A4-F4F355842100}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99B507C3-1884-4B27-9CFA-68425B9DA4B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99B507C3-1884-4B27-9CFA-68425B9DA4B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99B507C3-1884-4B27-9CFA-68425B9DA4B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99B507C3-1884-4B27-9CFA-68425B9DA4B1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C74A3672-F55F-4EA4-9F25-59552DD5BDC2}
+	EndGlobalSection
+EndGlobal
