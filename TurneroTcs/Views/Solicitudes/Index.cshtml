@@ -1,0 +1,442 @@
+@model TurneroTcs.ViewModels.SolicitudesIndexViewModel
+
+@{
+    ViewData["Title"] = "Turnero | Solicitudes";
+    var items = Model.Items.ToList();
+    var selected = Model.Selected ?? items.FirstOrDefault();
+    var hasItems = items.Any();
+    var activeId = selected?.SolicitudId;
+    var selectedType = selected?.TypeName ?? string.Empty;
+    var isVacation = string.Equals(selectedType, "Vacaciones", StringComparison.OrdinalIgnoreCase);
+    var isPermiso = selectedType.Contains("Permiso", StringComparison.OrdinalIgnoreCase);
+    var isCambio = selectedType.Contains("Cambio", StringComparison.OrdinalIgnoreCase);
+    var isCalamidad = selectedType.Contains("Calam", StringComparison.OrdinalIgnoreCase)
+        || selectedType.Contains("Ausencia", StringComparison.OrdinalIgnoreCase);
+    var roleLabel = User.IsInRole("SuperAdmin") || User.IsInRole("Admin")
+        ? "Admin"
+        : User.IsInRole("Lider")
+            ? "Lider"
+            : "Usuario";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/solicitudes-index.css" asp-append-version="true" />
+}
+
+<div class="container py-4 solicitudes-shell"
+     data-user-role="@roleLabel"
+     data-current-persona-id="@Model.CurrentPersonaId"
+     data-can-approve-vacacion="@Model.CanApproveVacacion.ToString().ToLowerInvariant()"
+     data-can-reject-vacacion="@Model.CanRejectVacacion.ToString().ToLowerInvariant()"
+     data-can-approve-permiso="@Model.CanApprovePermiso.ToString().ToLowerInvariant()"
+     data-can-reject-permiso="@Model.CanRejectPermiso.ToString().ToLowerInvariant()"
+     data-can-approve-cambio="@Model.CanApproveCambioTurno.ToString().ToLowerInvariant()"
+     data-can-reject-cambio="@Model.CanRejectCambioTurno.ToString().ToLowerInvariant()">
+    <form class="d-none" aria-hidden="true">
+        @Html.AntiForgeryToken()
+    </form>
+    <div class="solicitudes-grid">
+        <aside class="solicitudes-panel">
+            <div class="panel-header">
+                <div class="panel-header-main">
+                    <h2>Solicitudes</h2>
+                    <div class="panel-tabs" data-panel-tabs>
+                        <button type="button" class="panel-tab is-active" data-tab="pendientes">
+                            <span>Pendientes</span>
+                            <span class="panel-tab-count" data-tab-count="pendientes">0</span>
+                        </button>
+                        <button type="button" class="panel-tab" data-tab="historial">
+                            <span>Historial</span>
+                            <span class="panel-tab-count" data-tab-count="historial">0</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-filters">
+                <input type="search" class="panel-search" placeholder="Buscar por nombre" data-panel-search />
+                <select class="panel-filter" data-panel-filter>
+                    <option value="">Todos los tipos</option>
+                    <option value="Vacaciones">Vacaciones</option>
+                    <option value="Ausencia">Ausencia</option>
+                    <option value="Permiso">Permiso</option>
+                    <option value="Cambio de turno">Cambio de turno</option>
+                </select>
+                <select class="panel-filter" data-panel-sort>
+                    <option value="recent">Mas reciente</option>
+                    <option value="oldest">Mas antigua</option>
+                    <option value="status">Estado</option>
+                    <option value="type">Tipo</option>
+                    <option value="name">Nombre</option>
+                </select>
+            </div>
+            <div class="request-list">
+                @if (!hasItems)
+                {
+                    <div class="request-empty">No hay solicitudes registradas.</div>
+                }
+                else
+                {
+                    for (var i = 0; i < items.Count; i++)
+                    {
+                        var item = items[i];
+                        var isActive = item.SolicitudId == activeId ? "is-active" : string.Empty;
+                        var startMonthShort = string.IsNullOrWhiteSpace(item.StartMonth)
+                            ? "-"
+                            : (item.StartMonth.Length > 3 ? item.StartMonth.Substring(0, 3) : item.StartMonth);
+                        var endMonthShort = string.IsNullOrWhiteSpace(item.EndMonth)
+                            ? "-"
+                            : (item.EndMonth.Length > 3 ? item.EndMonth.Substring(0, 3) : item.EndMonth);
+                        var dateRange = $"{item.StartDay} {startMonthShort} - {item.EndDay} {endMonthShort}";
+                        <div class="request-card @isActive" data-request-item role="button" tabindex="0"
+                             data-request-id="@item.SolicitudId"
+                             data-requester-persona-id="@item.PersonaSolicitanteId"
+                             data-request-owned="@item.IsOwnedByCurrentPersona.ToString().ToLowerInvariant()"
+                             data-title="@item.Title"
+                             data-user="@item.UserName"
+                             data-type="@item.TypeName"
+                             data-start-month="@item.StartMonth"
+                             data-start-day="@item.StartDay"
+                             data-end-month="@item.EndMonth"
+                             data-end-day="@item.EndDay"
+                             data-days="@item.Days"
+                             data-status="@item.Status"
+                             data-status-code="@item.StatusCode"
+                             data-equipo="@item.EquipoName"
+                             data-grupo="@item.GrupoName"
+                             data-aprobador1="@item.Aprobador1Name"
+                             data-aprobador1-fecha="@item.Aprobador1Date"
+                             data-aprobador2="@item.Aprobador2Name"
+                             data-aprobador2-fecha="@item.Aprobador2Date"
+                             data-permiso-hora-inicio="@item.PermisoHoraInicio"
+                             data-permiso-hora-fin="@item.PermisoHoraFin"
+                             data-permiso-motivo="@item.PermisoMotivo"
+                             data-calamidad-motivo="@item.CalamidadMotivo"
+                             data-cambio-origen-nombre="@item.CambioOrigenNombre"
+                             data-cambio-origen-month="@item.CambioOrigenMonth"
+                             data-cambio-origen-day="@item.CambioOrigenDay"
+                             data-cambio-origen-turno="@item.CambioOrigenTurno"
+                             data-cambio-destino-nombre="@item.CambioDestinoNombre"
+                             data-cambio-destino-month="@item.CambioDestinoMonth"
+                             data-cambio-destino-day="@item.CambioDestinoDay"
+                             data-cambio-destino-turno="@item.CambioDestinoTurno"
+                             data-cambio-motivo="@item.CambioMotivo">
+                            <div class="request-head">
+                                <div class="request-name-wrap">
+                                    <div class="request-name">@item.UserName</div>
+                                    <div class="request-date">@dateRange</div>
+                                </div>
+                            </div>
+                            <div class="request-meta-row">
+                                <div class="request-meta-main">
+                                    <span class="request-type">@item.TypeName</span>
+                                </div>
+                                <span class="request-pill">@item.Status</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </aside>
+
+        <section class="solicitudes-detail">
+            <div class="detail-card">
+                <div class="detail-hero">
+                    <span class="detail-avatar @(hasItems ? null : "is-default")" data-detail-avatar aria-hidden="true">
+                        @if (!hasItems)
+                        {
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <path d="M8 3h6l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path>
+                                <path d="M14 3v5h5"></path>
+                                <path d="M9 12h6"></path>
+                                <path d="M9 16h4"></path>
+                            </svg>
+                        }
+                    </span>
+                    <div class="detail-title">
+                        <h3 data-detail-title>@(hasItems ? (selected?.Title ?? "Solicitud") : "Sin solicitudes")</h3>
+                        <p data-detail-user>@(hasItems ? (selected?.UserName ?? "Usuario") : "Aun no se registran solicitudes")</p>
+                    </div>
+                </div>
+                @if (!hasItems)
+                {
+                    <div class="detail-empty-state">
+                        <div class="detail-empty-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <path d="M8 3h6l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path>
+                                <path d="M14 3v5h5"></path>
+                                <path d="M9 12h6"></path>
+                                <path d="M9 16h4"></path>
+                            </svg>
+                        </div>
+                        <h4>No hay solicitudes registradas</h4>
+                        <p>Todavia no se ha creado ninguna solicitud.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="detail-empty-state" data-detail-empty-state hidden>
+                        <div class="detail-empty-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <path d="M8 3h6l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path>
+                                <path d="M14 3v5h5"></path>
+                                <path d="M9 12h6"></path>
+                                <path d="M9 16h4"></path>
+                            </svg>
+                        </div>
+                        <h4 data-detail-empty-title>Sin solicitudes pendientes</h4>
+                        <p data-detail-empty-message>No hay solicitudes pendientes esperando revision.</p>
+                    </div>
+                    <div class="detail-body" data-detail-body>
+                        <div class="detail-content">
+                            <div class="detail-hint" data-detail-review-hint hidden></div>
+                            <div class="detail-dates" data-detail-default @((isVacation || isPermiso || isCambio || isCalamidad) ? "hidden" : null)>
+                            <div class="date-card">
+                                <span class="date-month" data-detail-start-month>@(selected?.StartMonth ?? "-")</span>
+                                <span class="date-day" data-detail-start-day>@(selected?.StartDay ?? "-")</span>
+                            </div>
+                            <span class="date-arrow">-></span>
+                            <div class="date-card">
+                                <span class="date-month" data-detail-end-month>@(selected?.EndMonth ?? "-")</span>
+                                <span class="date-day" data-detail-end-day>@(selected?.EndDay ?? "-")</span>
+                            </div>
+                            <div class="detail-info">
+                                <div>
+                                    <span class="detail-label">Solicitado por</span>
+                                    <strong data-detail-user-strong>@(selected?.UserName ?? "Usuario")</strong>
+                                </div>
+                                <div>
+                                    <span class="detail-label">Numero de dias</span>
+                                    <strong data-detail-days>@(selected?.Days ?? "-")</strong>
+                                </div>
+                            </div>
+                            </div>
+
+                            <div class="detail-section" data-detail-default @((isVacation || isPermiso || isCambio || isCalamidad) ? "hidden" : null)>
+                            <h4>Quien mas esta ausente</h4>
+                            <div class="detail-table">
+                                <div class="detail-row detail-head">
+                                    <span>Nombre</span>
+                                    <span>Periodo</span>
+                                    <span>Estado</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span>Nombre Usuario</span>
+                                    <span>1 Dic - 14 Dic</span>
+                                    <span class="detail-pill" data-detail-status>@(selected?.Status ?? "Pendiente")</span>
+                                </div>
+                            </div>
+                            </div>
+
+                            <div class="vacation-detail" data-detail-vacation @(isVacation ? null : "hidden")>
+                            <div class="vacation-range">
+                                <div class="vacation-card">
+                                    <span class="vacation-month" data-detail-start-month>@(selected?.StartMonth ?? "-")</span>
+                                    <span class="vacation-day" data-detail-start-day>@(selected?.StartDay ?? "-")</span>
+                                </div>
+                                <div class="vacation-bar">
+                                    <span class="vacation-bar-line"></span>
+                                    <span class="vacation-bar-label" data-detail-days>@(selected?.Days ?? "-") dias</span>
+                                </div>
+                                <div class="vacation-card">
+                                    <span class="vacation-month" data-detail-end-month>@(selected?.EndMonth ?? "-")</span>
+                                    <span class="vacation-day" data-detail-end-day>@(selected?.EndDay ?? "-")</span>
+                                </div>
+                            </div>
+                            <div class="vacation-meta">
+                                <div>
+                                    <span class="detail-label">Solicitado por</span>
+                                    <strong data-detail-user-strong>@(selected?.UserName ?? "Usuario")</strong>
+                                </div>
+                                <div>
+                                    <span class="detail-label">Numero de dias</span>
+                                    <strong data-detail-days>@(selected?.Days ?? "-")</strong>
+                                </div>
+                                <div>
+                                    <span class="detail-label">Equipo</span>
+                                    <strong data-detail-equipo>@(selected?.EquipoName ?? "-")</strong>
+                                </div>
+                                <div>
+                                    <span class="detail-label">Grupo</span>
+                                    <strong data-detail-grupo>@(string.IsNullOrWhiteSpace(selected?.GrupoName) ? "-" : selected?.GrupoName)</strong>
+                                </div>
+                            </div>
+                            </div>
+
+                            <div class="permiso-detail" data-detail-permiso @(isPermiso ? null : "hidden")>
+                            <div class="permiso-summary">
+                                <div class="permiso-block">
+                                    <span class="permiso-label">Dia solicitado</span>
+                                    <strong class="permiso-value">
+                                        <span data-detail-permiso-day>@(selected?.StartDay ?? "-")</span>
+                                        <span data-detail-permiso-month>@(selected?.StartMonth ?? "-")</span>
+                                    </strong>
+                                </div>
+                                <div class="permiso-block">
+                                    <span class="permiso-label">Horario</span>
+                                    <strong class="permiso-value" data-detail-permiso-time>
+                                        @(string.IsNullOrWhiteSpace(selected?.PermisoHoraInicio)
+                                            ? "--"
+                                            : $"{selected?.PermisoHoraInicio} - {selected?.PermisoHoraFin}")
+                                    </strong>
+                                </div>
+                                <div class="permiso-block">
+                                    <span class="permiso-label">Estado</span>
+                                    <strong class="permiso-value" data-detail-status>@(selected?.Status ?? "Pendiente")</strong>
+                                </div>
+                            </div>
+
+                            <div class="permiso-meta">
+                                <div>
+                                    <span class="detail-label">Solicitado por</span>
+                                    <strong data-detail-user-strong>@(selected?.UserName ?? "Usuario")</strong>
+                                </div>
+                                <div>
+                                    <span class="detail-label">Equipo</span>
+                                    <strong data-detail-equipo>@(selected?.EquipoName ?? "-")</strong>
+                                </div>
+                                <div>
+                                    <span class="detail-label">Grupo</span>
+                                    <strong data-detail-grupo>@(string.IsNullOrWhiteSpace(selected?.GrupoName) ? "-" : selected?.GrupoName)</strong>
+                                </div>
+                                <div>
+                                    <span class="detail-label">Motivo</span>
+                                    <strong data-detail-permiso-motivo>@(string.IsNullOrWhiteSpace(selected?.PermisoMotivo) ? "-" : selected?.PermisoMotivo)</strong>
+                                </div>
+                            </div>
+
+                            </div>
+
+                            <div class="calamidad-detail" data-detail-calamidad @(isCalamidad ? null : "hidden")>
+                                <div class="calamidad-summary">
+                                    <div class="calamidad-block calamidad-block--range">
+                                        <span class="calamidad-label">Periodo</span>
+                                        <strong class="calamidad-range-value">
+                                            <span>
+                                                <span data-detail-start-day>@(selected?.StartDay ?? "-")</span>
+                                                <span data-detail-start-month>@(selected?.StartMonth ?? "-")</span>
+                                            </span>
+                                            <span class="calamidad-range-arrow">-></span>
+                                            <span>
+                                                <span data-detail-end-day>@(selected?.EndDay ?? "-")</span>
+                                                <span data-detail-end-month>@(selected?.EndMonth ?? "-")</span>
+                                            </span>
+                                        </strong>
+                                    </div>
+                                    <div class="calamidad-block">
+                                        <span class="calamidad-label">Dias</span>
+                                        <strong class="calamidad-value">
+                                            <span data-detail-days>@(selected?.Days ?? "-")</span>
+                                        </strong>
+                                    </div>
+                                    <div class="calamidad-block">
+                                        <span class="calamidad-label">Estado</span>
+                                        <strong class="calamidad-value" data-detail-status>@(selected?.Status ?? "Pendiente")</strong>
+                                    </div>
+                                </div>
+
+                                <div class="calamidad-meta">
+                                    <div>
+                                        <span class="detail-label">Solicitado por</span>
+                                        <strong data-detail-user-strong>@(selected?.UserName ?? "Usuario")</strong>
+                                    </div>
+                                    <div>
+                                        <span class="detail-label">Equipo</span>
+                                        <strong data-detail-equipo>@(selected?.EquipoName ?? "-")</strong>
+                                    </div>
+                                    <div>
+                                        <span class="detail-label">Grupo</span>
+                                        <strong data-detail-grupo>@(string.IsNullOrWhiteSpace(selected?.GrupoName) ? "-" : selected?.GrupoName)</strong>
+                                    </div>
+                                    <div class="calamidad-meta-wide">
+                                        <span class="detail-label">Motivo</span>
+                                        <strong data-detail-calamidad-motivo>@(string.IsNullOrWhiteSpace(selected?.CalamidadMotivo) ? "-" : selected?.CalamidadMotivo)</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="cambio-detail" data-detail-cambio @(isCambio ? null : "hidden")>
+                            <div class="cambio-grid">
+                                <div class="cambio-card">
+                                    <span class="cambio-label">Turno origen</span>
+                                    <strong class="cambio-name" data-detail-cambio-origen-nombre>@(selected?.CambioOrigenNombre ?? "Usuario")</strong>
+                                    <span class="cambio-date">
+                                        <span data-detail-cambio-origen-day>@(selected?.CambioOrigenDay ?? "-")</span>
+                                        <span data-detail-cambio-origen-month>@(selected?.CambioOrigenMonth ?? "-")</span>
+                                    </span>
+                                    <span class="cambio-shift" data-detail-cambio-origen-turno>@(selected?.CambioOrigenTurno ?? "-")</span>
+                                </div>
+                                <div class="cambio-card">
+                                    <span class="cambio-label">Turno destino</span>
+                                    <strong class="cambio-name" data-detail-cambio-destino-nombre>@(selected?.CambioDestinoNombre ?? "Usuario")</strong>
+                                    <span class="cambio-date">
+                                        <span data-detail-cambio-destino-day>@(selected?.CambioDestinoDay ?? "-")</span>
+                                        <span data-detail-cambio-destino-month>@(selected?.CambioDestinoMonth ?? "-")</span>
+                                    </span>
+                                    <span class="cambio-shift" data-detail-cambio-destino-turno>@(selected?.CambioDestinoTurno ?? "-")</span>
+                                </div>
+                            </div>
+
+                            <div class="cambio-meta">
+                                <div>
+                                    <span class="detail-label">Solicitado por</span>
+                                    <strong data-detail-user-strong>@(selected?.UserName ?? "Usuario")</strong>
+                                </div>
+                                <div>
+                                    <span class="detail-label">Equipo</span>
+                                    <strong data-detail-equipo>@(selected?.EquipoName ?? "-")</strong>
+                                </div>
+                                <div>
+                                    <span class="detail-label">Grupo</span>
+                                    <strong data-detail-grupo>@(string.IsNullOrWhiteSpace(selected?.GrupoName) ? "-" : selected?.GrupoName)</strong>
+                                </div>
+                                <div>
+                                    <span class="detail-label">Motivo</span>
+                                    <strong data-detail-cambio-motivo>@(string.IsNullOrWhiteSpace(selected?.CambioMotivo) ? "-" : selected?.CambioMotivo)</strong>
+                                </div>
+                            </div>
+
+                            </div>
+
+                            <div class="approval-timeline" data-approval-timeline>
+                            <h4>Flujo de aprobacion</h4>
+                            <div class="approval-timeline-grid">
+                                <div class="approval-step is-complete" data-approval-step="solicitada">
+                                    <span class="approval-step-title">Solicitada</span>
+                                    <strong>Creada</strong>
+                                </div>
+                                <div class="approval-step" data-approval-step="aprobador1">
+                                    <span class="approval-step-title">Aprobador 1</span>
+                                    <strong data-detail-aprobador1>@(string.IsNullOrWhiteSpace(selected?.Aprobador1Name) ? "Pendiente" : selected?.Aprobador1Name)</strong>
+                                    <span class="approval-date" data-detail-aprobador1-fecha>@(string.IsNullOrWhiteSpace(selected?.Aprobador1Date) ? "-" : selected?.Aprobador1Date)</span>
+                                </div>
+                                <div class="approval-step" data-approval-step="aprobador2">
+                                    <span class="approval-step-title">Aprobador 2</span>
+                                    <strong data-detail-aprobador2>@(string.IsNullOrWhiteSpace(selected?.Aprobador2Name) ? "Pendiente" : selected?.Aprobador2Name)</strong>
+                                    <span class="approval-date" data-detail-aprobador2-fecha>@(string.IsNullOrWhiteSpace(selected?.Aprobador2Date) ? "-" : selected?.Aprobador2Date)</span>
+                                </div>
+                                <div class="approval-step" data-approval-step="resultado">
+                                    <span class="approval-step-title">Resultado</span>
+                                    <strong data-detail-status>@(selected?.Status ?? "Pendiente")</strong>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        @if (hasItems)
+                        {
+                            <div class="detail-actions detail-actions--sticky" data-detail-actions hidden>
+                                <button type="button" class="btn-outline-secondary" data-action-cancel hidden>Cancelar solicitud</button>
+                                <button type="button" class="btn-secondary" data-action-reject>Rechazar</button>
+                                <button type="button" class="btn-primary" data-action-approve>Aprobar solicitud</button>
+                                <div class="detail-action-note" data-detail-action-note></div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/solicitudes.js" asp-append-version="true"></script>
+}

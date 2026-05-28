@@ -1,0 +1,41 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using TurneroTcs.Data
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@inject ApplicationDbContext DbContext
+
+<ul class="navbar-nav">
+@if (SignInManager.IsSignedIn(User))
+{
+    var userId = UserManager.GetUserId(User);
+    var persona = string.IsNullOrWhiteSpace(userId)
+        ? null
+        : await DbContext.Personas
+            .AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .Select(p => new { p.Nombre, p.Apellido })
+            .FirstOrDefaultAsync();
+    var displayName = persona == null
+        ? (User.Identity?.Name ?? "Usuario")
+        : $"{persona.Nombre} {persona.Apellido}".Trim();
+
+    <li class="nav-item">
+        <a class="nav-link app-nav-link app-auth-link" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hola @displayName!</a>
+    </li>
+    <li class="nav-item">
+        <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+            <button type="submit" class="nav-link btn btn-link app-nav-link app-auth-link border-0">Logout</button>
+        </form>
+    </li>
+}
+else
+{
+    <li class="nav-item">
+        <a class="nav-link app-nav-link app-auth-link" asp-area="Identity" asp-page="/Account/Register">Register</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link app-nav-link app-auth-link" asp-area="Identity" asp-page="/Account/Login">Login</a>
+    </li>
+}
+</ul>

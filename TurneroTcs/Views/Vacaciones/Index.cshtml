@@ -1,0 +1,848 @@
+@model TurneroTcs.ViewModels.VacacionesIndexViewModel
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Turnero | Vacaciones";
+    var es = new CultureInfo("es-ES");
+    var totalColumns = 3 + (Model.ShowEquipoColumn ? 1 : 0) + (Model.ShowGrupoColumn ? 1 : 0);
+    var hasPersonaOptions = Model.PersonasDisponibles.Count > 0;
+    var showCreateForm = !ViewData.ModelState.IsValid;
+    var bulkItems = Model.BulkCreate.Items ?? new List<TurneroTcs.ViewModels.VacacionCargaItemViewModel>();
+    var showEmptyBulkItems = bulkItems.Count == 0;
+    var groupedItems = Model.Items
+        .GroupBy(item => new { item.PersonaId, item.PersonaNombre, item.EquipoNombre, item.GrupoNombre })
+        .Select(group => new
+        {
+            group.Key.PersonaId,
+            group.Key.PersonaNombre,
+            group.Key.EquipoNombre,
+            group.Key.GrupoNombre,
+            Periodos = group
+                .OrderByDescending(item => item.FechaInicio)
+                .ThenByDescending(item => item.FechaSolicitud)
+                .ToList(),
+            TotalDias = group.Sum(item => item.Dias)
+        })
+        .ToList();
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/app-data-surface.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/vacaciones-index.css" asp-append-version="true" />
+}
+
+<div class="container py-4 vacaciones-page">
+    <div class="vacaciones-header">
+        <div>
+            <h2 class="vacaciones-title">Vacaciones</h2>
+            <p class="vacaciones-subtitle">Consulta los periodos de vacaciones segun tu alcance de acceso.</p>
+        </div>
+        <div class="vacaciones-header-actions">
+            @if (Model.CanCreate)
+            {
+                <button class="btn app-btn-primary vacaciones-cta vacaciones-create-toggle"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#vacaciones-create-collapse"
+                        aria-expanded="@(showCreateForm ? "true" : "false")"
+                        aria-controls="vacaciones-create-collapse">
+                    Registrar vacaciones
+                </button>
+            }
+        </div>
+    </div>
+
+    <form method="get" class="vacaciones-filters app-data-filters mb-4" data-vacaciones-filters>
+        <input type="hidden" name="page" value="@Model.Page" />
+        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-4">
+                <label class="form-label vacaciones-filter-label app-data-filter-label" for="vacaciones-search">Buscar</label>
+                <input id="vacaciones-search"
+                       name="search"
+                       value="@Model.Search"
+                       class="form-control vacaciones-filter-input app-data-filter-input"
+                       placeholder="Nombre o ultimatix" />
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label vacaciones-filter-label app-data-filter-label" for="vacaciones-year">Año</label>
+                <select id="vacaciones-year" name="year" class="form-select vacaciones-filter-select app-data-filter-select">
+                    <option value="">Todos</option>
+                    @foreach (var yearOption in Model.YearOptions)
+                    {
+                        <option value="@yearOption" selected="@(Model.Year == yearOption ? "selected" : null)">@yearOption</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label vacaciones-filter-label app-data-filter-label" for="vacaciones-month">Mes</label>
+                <select id="vacaciones-month" name="month" class="form-select vacaciones-filter-select app-data-filter-select">
+                    <option value="">Todos</option>
+                    @for (var m = 1; m <= 12; m++)
+                    {
+                        var monthName = es.TextInfo.ToTitleCase(es.DateTimeFormat.GetMonthName(m));
+                        <option value="@m" selected="@(Model.Month == m ? "selected" : null)">@monthName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-1 d-flex align-items-end">
+                <a asp-action="Index"
+                   class="btn btn-outline-secondary vacaciones-filter-clear vacaciones-filter-clear-icon app-data-filter-clear app-data-filter-clear-icon"
+                   aria-label="Limpiar filtros"
+                   title="Limpiar filtros">
+                    <span class="vacaciones-filter-icon app-data-filter-icon" aria-hidden="true">
+                        <svg class="vacaciones-filter-icon-funnel app-data-filter-icon-funnel" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 5a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 14.5V19a1 1 0 0 1-.447.832l-3 2A1 1 0 0 1 9 21v-6.5L3.2 5.6A1 1 0 0 1 3 5Z" />
+                        </svg>
+                        <svg class="vacaciones-filter-icon-x app-data-filter-icon-x" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M4 4l6 6M10 4l-6 6" />
+                        </svg>
+                    </span>
+                    <span class="visually-hidden">Limpiar filtros</span>
+                </a>
+            </div>
+        </div>
+    </form>
+
+    @if (Model.CanCreate)
+    {
+        <div class="collapse vacaciones-create-collapse @(showCreateForm ? "show" : null)" id="vacaciones-create-collapse">
+            <div class="card shadow-sm vacaciones-create-card mb-3">
+                <div class="card-body">
+                    <div class="vacaciones-create-title">Nuevo registro de vacaciones</div>
+                    @if (!hasPersonaOptions)
+                    {
+                        <div class="alert alert-warning vacaciones-alert mb-3" role="alert">
+                            No hay personas disponibles para registrar vacaciones.
+                        </div>
+                    }
+                    <form asp-action="CreateBulk" method="post" class="row g-3 align-items-end" data-vacaciones-create-form>
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="col-12 text-danger"></div>
+
+                        <div class="col-12">
+                            <div class="vacaciones-selected-personas" data-vacaciones-selected-list>
+                                @for (var i = 0; i < bulkItems.Count; i++)
+                                {
+                                    var item = bulkItems[i];
+                                    <div class="vacaciones-item-card" data-vac-row>
+                                        <div class="vacaciones-item-fields">
+                                            <div class="vacaciones-row-field">
+                                                <label class="vacaciones-row-label">Persona</label>
+                                                <div class="vacaciones-row-control">
+                                                    <select class="form-select"
+                                                            name="BulkCreate.Items[@i].PersonaId"
+                                                            data-field="persona-id"
+                                                            disabled="@(!hasPersonaOptions)">
+                                                        @foreach (var option in Model.PersonasDisponibles)
+                                                        {
+                                                            <option value="@option.PersonaId" selected="@(item.PersonaId == option.PersonaId ? "selected" : null)">@option.DisplayName</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="vacaciones-row-field">
+                                                <label class="vacaciones-row-label">Inicio</label>
+                                                <div class="vacaciones-row-control">
+                                                    <input type="text"
+                                                           class="form-control app-date-input"
+                                                           name="BulkCreate.Items[@i].FechaInicio"
+                                                           value="@(item.FechaInicio?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                                                           data-field="fecha-inicio"
+                                                           data-app-calendar="true"
+                                                           autocomplete="off"
+                                                           disabled="@(!hasPersonaOptions)" />
+                                                </div>
+                                            </div>
+                                            <div class="vacaciones-row-field">
+                                                <label class="vacaciones-row-label">Fin</label>
+                                                <div class="vacaciones-row-control">
+                                                    <input type="text"
+                                                           class="form-control app-date-input"
+                                                           name="BulkCreate.Items[@i].FechaFin"
+                                                           value="@(item.FechaFin?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                                                           data-field="fecha-fin"
+                                                           data-app-calendar="true"
+                                                           autocomplete="off"
+                                                           disabled="@(!hasPersonaOptions)" />
+                                                </div>
+                                            </div>
+                                            <div class="vacaciones-row-field vacaciones-row-actions">
+                                                <button type="button" class="vacaciones-selected-remove" aria-label="Quitar persona">
+                                                    <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                                        <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v9h-2V9Zm4 0h2v9h-2V9ZM7 9h2v9H7V9Z"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                <p class="vacaciones-selected-empty @(showEmptyBulkItems ? null : "d-none")"
+                                   data-vacaciones-selected-empty>
+                                    Sin filas agregadas.
+                                </p>
+                            </div>
+                            @if (ViewData.ModelState.TryGetValue("BulkCreate.Items", out var bulkItemsState) && bulkItemsState.Errors.Count > 0)
+                            {
+                                <span class="text-danger d-block mt-1">@bulkItemsState.Errors[0].ErrorMessage</span>
+                            }
+                        </div>
+
+                        <div class="col-12">
+                            <button type="button"
+                                    class="btn btn-outline-secondary vacaciones-add-row-btn"
+                                    data-vacaciones-add-persona
+                                    disabled="@(!hasPersonaOptions)">
+                                Agregar persona
+                            </button>
+                        </div>
+
+                        <div class="col-12 vacaciones-create-actions">
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#vacaciones-create-collapse"
+                                    aria-controls="vacaciones-create-collapse">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary vacaciones-create-btn" disabled="@(!hasPersonaOptions)">Guardar</button>
+                        </div>
+                    </form>
+                    <template id="vacaciones-row-template">
+                        <div class="vacaciones-item-card" data-vac-row>
+                            <div class="vacaciones-item-fields">
+                                <div class="vacaciones-row-field">
+                                    <label class="vacaciones-row-label">Persona</label>
+                                    <div class="vacaciones-row-control">
+                                        <select class="form-select" data-field="persona-id">
+                                            @foreach (var option in Model.PersonasDisponibles)
+                                            {
+                                                <option value="@option.PersonaId">@option.DisplayName</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="vacaciones-row-field">
+                                    <label class="vacaciones-row-label">Inicio</label>
+                                    <div class="vacaciones-row-control">
+                                        <input type="text"
+                                               class="form-control app-date-input"
+                                               data-field="fecha-inicio"
+                                               data-app-calendar="true"
+                                               autocomplete="off" />
+                                    </div>
+                                </div>
+                                <div class="vacaciones-row-field">
+                                    <label class="vacaciones-row-label">Fin</label>
+                                    <div class="vacaciones-row-control">
+                                        <input type="text"
+                                               class="form-control app-date-input"
+                                               data-field="fecha-fin"
+                                               data-app-calendar="true"
+                                               autocomplete="off" />
+                                    </div>
+                                </div>
+                                <div class="vacaciones-row-field vacaciones-row-actions">
+                                    <button type="button" class="vacaciones-selected-remove" aria-label="Quitar persona">
+                                        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                            <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v9h-2V9Zm4 0h2v9h-2V9ZM7 9h2v9H7V9Z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm vacaciones-card app-data-card">
+        <div class="card-body p-0">
+            <div class="table-responsive app-data-table-wrap">
+                <table class="table align-middle mb-0 vacaciones-table app-data-table">
+                    <thead>
+                        <tr>
+                            <th class="vacaciones-toggle-col"></th>
+                            <th><span class="app-data-header-label">Persona</span></th>
+                            @if (Model.ShowEquipoColumn)
+                            {
+                                <th><span class="app-data-header-label">Equipo</span></th>
+                            }
+                            @if (Model.ShowGrupoColumn)
+                            {
+                                <th><span class="app-data-header-label">Grupo</span></th>
+                            }
+                            <th class="text-end"><span class="app-data-header-label">Dias totales</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (groupedItems.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="@totalColumns" class="text-center text-muted py-4">
+                                    No hay vacaciones registradas para mostrar.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var persona in groupedItems)
+                            {
+                                var detailRowId = $"vacaciones-detail-{persona.PersonaId}";
+
+                                <tr class="vacaciones-row app-data-row" data-vacaciones-row data-persona-id="@persona.PersonaId">
+                                    <td class="vacaciones-toggle-cell align-top">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary vacaciones-toggle-btn"
+                                                data-vacaciones-toggle
+                                                aria-expanded="false"
+                                                aria-controls="@detailRowId">
+                                            <svg class="vacaciones-toggle-icon" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                                                <path fill="currentColor" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06z" />
+                                            </svg>
+                                            <span class="visually-hidden">Ver periodos</span>
+                                        </button>
+                                    </td>
+                                    <td class="fw-semibold align-top">
+                                        @persona.PersonaNombre
+                                        <div class="vacaciones-persona-meta">
+                                            @persona.Periodos.Count periodo@(persona.Periodos.Count == 1 ? "" : "s")
+                                        </div>
+                                    </td>
+                                    @if (Model.ShowEquipoColumn)
+                                    {
+                                        <td class="align-top">@persona.EquipoNombre</td>
+                                    }
+                                    @if (Model.ShowGrupoColumn)
+                                    {
+                                        <td class="align-top">@persona.GrupoNombre</td>
+                                    }
+                                    <td class="text-end fw-semibold align-top">@persona.TotalDias</td>
+                                </tr>
+
+                                <tr class="vacaciones-detail" data-vacaciones-detail hidden id="@detailRowId">
+                                    <td colspan="@totalColumns">
+                                        <div class="vacaciones-detail-wrap">
+                                            <div class="vacaciones-period-list">
+                                                @foreach (var periodo in persona.Periodos)
+                                                {
+                                                    var estadoClass = periodo.Estado switch
+                                                    {
+                                                        "Aprobado" => "is-approved",
+                                                        "Rechazado" => "is-rejected",
+                                                        "En aprobacion" => "is-review",
+                                                        _ => "is-pending"
+                                                    };
+                                                    var canManagePeriodo = Model.CanCreate && periodo.CanManage;
+
+                                                    <div class="vacaciones-period-item">
+                                                        <div class="vacaciones-period-range">
+                                                            @periodo.FechaInicio.ToString("dd MMM yyyy", es) - @periodo.FechaFin.ToString("dd MMM yyyy", es)
+                                                        </div>
+                                                        <div class="vacaciones-period-meta">
+                                                            <span class="vacaciones-period-days">@periodo.Dias dia@(periodo.Dias == 1 ? "" : "s")</span>
+                                                            <span class="vacaciones-status @estadoClass">@periodo.Estado</span>
+                                                            <span class="vacaciones-period-requested">
+                                                                Solicitada @periodo.FechaSolicitud.ToLocalTime().ToString("dd MMM yyyy", es)
+                                                            </span>
+                                                            @if (canManagePeriodo)
+                                                            {
+                                                                <div class="vacaciones-period-actions">
+                                                                    <button type="button"
+                                                                            class="btn btn-outline-secondary btn-sm vacaciones-period-action"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#vacacionesEditModal"
+                                                                            data-vacacion-edit
+                                                                            data-vacacion-id="@periodo.VacacionId"
+                                                                            data-persona-nombre="@persona.PersonaNombre"
+                                                                            data-fecha-inicio="@periodo.FechaInicio.ToString("yyyy-MM-dd")"
+                                                                            data-fecha-fin="@periodo.FechaFin.ToString("yyyy-MM-dd")">
+                                                                        Editar
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="btn btn-outline-danger btn-sm vacaciones-period-action vacaciones-period-action-danger"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#vacacionesDeleteModal"
+                                                                            data-vacacion-delete
+                                                                            data-vacacion-id="@periodo.VacacionId"
+                                                                            data-persona-nombre="@persona.PersonaNombre"
+                                                                            data-fecha-rango="@periodo.FechaInicio.ToString("dd MMM yyyy", es) - @periodo.FechaFin.ToString("dd MMM yyyy", es)">
+                                                                        Eliminar
+                                                                    </button>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @{
+            var footerCurrentCount = groupedItems.Count;
+            var footerStartItem = Model.TotalCount == 0 ? 0 : ((Model.Page - 1) * Model.PageSize) + 1;
+            var footerEndItem = Model.TotalCount == 0 ? 0 : footerStartItem + footerCurrentCount - 1;
+            var footerVisiblePages = Enumerable.Range(1, Model.TotalPages)
+                .Where(p => p == 1 || p == Model.TotalPages || Math.Abs(p - Model.Page) <= 1)
+                .ToList();
+            var footerBaseRoute = new Dictionary<string, string?>
+            {
+                ["search"] = Model.Search,
+                ["year"] = Model.Year?.ToString(),
+                ["month"] = Model.Month?.ToString(),
+                ["pageSize"] = Model.PageSize.ToString()
+            };
+            string BuildPageUrl(int p)
+            {
+                var query = footerBaseRoute
+                    .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+                    .Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value!)}")
+                    .Append($"page={p}");
+                return Url.Action("Index", "Vacaciones") + "?" + string.Join("&", query);
+            }
+        }
+        @if (Model.TotalCount > 0)
+        {
+            <div class="app-data-footer">
+                <div class="app-data-footer-copy">
+                    <span class="app-data-footer-title">Mostrando @footerStartItem-@footerEndItem de @Model.TotalCount personas</span>
+                    <div class="app-data-footer-meta">
+                        <span class="app-data-footer-pill">Pagina @Model.Page de @Model.TotalPages</span>
+                    </div>
+                </div>
+                <div class="app-data-footer-actions">
+                    <div class="app-data-page-size-control">
+                        <label class="app-data-page-size-label" for="vacacionesFooterPageSize">Filas</label>
+                        <select id="vacacionesFooterPageSize"
+                                class="form-select app-data-page-size-select"
+                                data-vacaciones-footer-page-size>
+                            <option value="15" selected="@(Model.PageSize == 15 ? "selected" : null)">15</option>
+                            <option value="25" selected="@(Model.PageSize == 25 ? "selected" : null)">25</option>
+                            <option value="50" selected="@(Model.PageSize == 50 ? "selected" : null)">50</option>
+                            <option value="100" selected="@(Model.PageSize == 100 ? "selected" : null)">100</option>
+                        </select>
+                    </div>
+                    @if (Model.TotalPages > 1)
+                    {
+                    <nav class="app-data-pagination app-data-pagination-shell" aria-label="Paginacion">
+                        <a class="app-data-page-nav app-data-page-nav-edge @(Model.Page == 1 ? "is-disabled" : "")"
+                           href="@(Model.Page == 1 ? "#" : BuildPageUrl(1))"
+                           aria-label="Primera pagina">
+                            <span>Primera</span>
+                        </a>
+                        <a class="app-data-page-nav @(Model.Page == 1 ? "is-disabled" : "")"
+                           href="@(Model.Page == 1 ? "#" : BuildPageUrl(Model.Page - 1))"
+                           aria-label="Pagina anterior">
+                            <span class="app-data-page-nav-icon" aria-hidden="true">&lsaquo;</span>
+                            <span>Anterior</span>
+                        </a>
+                        <div class="app-data-page-links">
+                            @{
+                                int? previousVisiblePage = null;
+                            }
+                            @foreach (var p in footerVisiblePages)
+                            {
+                                @if (previousVisiblePage.HasValue && p - previousVisiblePage.Value > 1)
+                                {
+                                    <span class="app-data-page-gap" aria-hidden="true">...</span>
+                                }
+                                <a class="app-data-page-link @(p == Model.Page ? "is-active" : "")"
+                                   href="@(p == Model.Page ? "#" : BuildPageUrl(p))"
+                                   aria-current="@(p == Model.Page ? "page" : null)">
+                                    @p
+                                </a>
+                                previousVisiblePage = p;
+                            }
+                        </div>
+                        <a class="app-data-page-nav @(Model.Page == Model.TotalPages ? "is-disabled" : "")"
+                           href="@(Model.Page == Model.TotalPages ? "#" : BuildPageUrl(Model.Page + 1))"
+                           aria-label="Pagina siguiente">
+                            <span>Siguiente</span>
+                            <span class="app-data-page-nav-icon" aria-hidden="true">&rsaquo;</span>
+                        </a>
+                        <a class="app-data-page-nav app-data-page-nav-edge @(Model.Page == Model.TotalPages ? "is-disabled" : "")"
+                           href="@(Model.Page == Model.TotalPages ? "#" : BuildPageUrl(Model.TotalPages))"
+                           aria-label="Ultima pagina">
+                            <span>Ultima</span>
+                        </a>
+                    </nav>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.CanCreate)
+{
+    <div class="modal fade" id="vacacionesEditModal" tabindex="-1" aria-labelledby="vacacionesEditModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="Update" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="search" value="@Model.Search" />
+                    <input type="hidden" name="year" value="@Model.Year" />
+                    <input type="hidden" name="month" value="@Model.Month" />
+                    <input type="hidden" name="page" value="@Model.Page" />
+                    <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                    <input type="hidden" name="VacacionId" value="" data-vacaciones-edit-id />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="vacacionesEditModalLabel">Editar vacaciones</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Persona</label>
+                            <input type="text" class="form-control" value="" readonly data-vacaciones-edit-persona />
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="vacacionesEditFechaInicio">Inicio</label>
+                                <input id="vacacionesEditFechaInicio"
+                                       type="text"
+                                       class="form-control app-date-input"
+                                       name="FechaInicio"
+                                       value=""
+                                       data-app-calendar="true"
+                                       data-vacaciones-edit-inicio
+                                       autocomplete="off" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="vacacionesEditFechaFin">Fin</label>
+                                <input id="vacacionesEditFechaFin"
+                                       type="text"
+                                       class="form-control app-date-input"
+                                       name="FechaFin"
+                                       value=""
+                                       data-app-calendar="true"
+                                       data-vacaciones-edit-fin
+                                       autocomplete="off" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="vacacionesDeleteModal" tabindex="-1" aria-labelledby="vacacionesDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="Delete" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="search" value="@Model.Search" />
+                    <input type="hidden" name="year" value="@Model.Year" />
+                    <input type="hidden" name="month" value="@Model.Month" />
+                    <input type="hidden" name="page" value="@Model.Page" />
+                    <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                    <input type="hidden" name="vacacionId" value="" data-vacaciones-delete-id />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="vacacionesDeleteModalLabel">Eliminar vacaciones</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-2">Esta accion eliminara el periodo de vacaciones seleccionado.</p>
+                        <div class="vacaciones-delete-summary">
+                            <strong data-vacaciones-delete-persona></strong>
+                            <span data-vacaciones-delete-rango></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (() => {
+            const form = document.querySelector("[data-vacaciones-filters]");
+            if (!form) {
+                return;
+            }
+
+            const search = form.querySelector("input[name='search']");
+            const year = form.querySelector("select[name='year']");
+            const month = form.querySelector("select[name='month']");
+            const pageSize = form.querySelector("input[name='pageSize']");
+            const footerPageSize = document.querySelector("[data-vacaciones-footer-page-size]");
+            const pageInput = form.querySelector("input[name='page']");
+            let timer;
+
+            const submitForm = () => {
+                if (pageInput) {
+                    pageInput.value = "1";
+                }
+                if (form.requestSubmit) {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
+            };
+
+            if (search) {
+                search.addEventListener("input", () => {
+                    clearTimeout(timer);
+                    timer = setTimeout(submitForm, 300);
+                });
+            }
+
+            [year, month].forEach((select) => {
+                if (!select) return;
+                select.addEventListener("change", submitForm);
+            });
+
+            footerPageSize?.addEventListener("change", () => {
+                if (pageSize) {
+                    pageSize.value = footerPageSize.value;
+                }
+                submitForm();
+            });
+        })();
+    </script>
+    <script>
+        (() => {
+            const form = document.querySelector('[data-vacaciones-create-form]');
+            if (!form) return;
+
+            const addButtons = Array.from(form.querySelectorAll('[data-vacaciones-add-persona]'));
+            const list = form.querySelector('[data-vacaciones-selected-list]');
+            const empty = form.querySelector('[data-vacaciones-selected-empty]');
+            const template = document.querySelector('#vacaciones-row-template');
+
+            if (!list || !empty || !template || addButtons.length === 0) return;
+
+            const refreshEmptyState = () => {
+                const count = list.querySelectorAll('.vacaciones-item-card').length;
+                empty.classList.toggle('d-none', count > 0);
+            };
+
+            const todayIso = () => {
+                const now = new Date();
+                const mm = `${now.getMonth() + 1}`.padStart(2, '0');
+                const dd = `${now.getDate()}`.padStart(2, '0');
+                return `${now.getFullYear()}-${mm}-${dd}`;
+            };
+
+            const reindexRows = () => {
+                const rows = Array.from(list.querySelectorAll('.vacaciones-item-card'));
+                rows.forEach((row, index) => {
+                    const personaInput = row.querySelector('[data-field="persona-id"]');
+                    const inicioInput = row.querySelector('[data-field="fecha-inicio"]');
+                    const finInput = row.querySelector('[data-field="fecha-fin"]');
+                    if (personaInput instanceof HTMLSelectElement) {
+                        personaInput.name = `BulkCreate.Items[${index}].PersonaId`;
+                    }
+                    if (inicioInput instanceof HTMLInputElement) {
+                        inicioInput.name = `BulkCreate.Items[${index}].FechaInicio`;
+                    }
+                    if (finInput instanceof HTMLInputElement) {
+                        finInput.name = `BulkCreate.Items[${index}].FechaFin`;
+                    }
+                });
+            };
+
+            const addPersona = () => {
+                const node = template.content.firstElementChild;
+                if (!node) return;
+                const row = node.cloneNode(true);
+                const defaultDate = todayIso();
+                const inicioInput = row.querySelector('[data-field="fecha-inicio"]');
+                const finInput = row.querySelector('[data-field="fecha-fin"]');
+                if (inicioInput instanceof HTMLInputElement) {
+                    inicioInput.value = defaultDate;
+                }
+                if (finInput instanceof HTMLInputElement) {
+                    finInput.value = defaultDate;
+                }
+                list.appendChild(row);
+                reindexRows();
+                if (window.AppCalendar && typeof window.AppCalendar.refresh === 'function') {
+                    window.AppCalendar.refresh(row);
+                }
+                refreshEmptyState();
+            };
+
+            const ensureAtLeastOneRow = () => {
+                const count = list.querySelectorAll('.vacaciones-item-card').length;
+                if (count === 0) {
+                    addPersona();
+                }
+            };
+
+            addButtons.forEach((button) => {
+                button.addEventListener('click', addPersona);
+            });
+
+            list.addEventListener('click', (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement)) return;
+                const removeButton = target.closest('.vacaciones-selected-remove');
+                if (!removeButton) return;
+                const row = removeButton.closest('.vacaciones-item-card');
+                if (row) {
+                    row.remove();
+                    reindexRows();
+                    refreshEmptyState();
+                    ensureAtLeastOneRow();
+                }
+            });
+
+            reindexRows();
+            ensureAtLeastOneRow();
+            refreshEmptyState();
+        })();
+    </script>
+    <script>
+        (() => {
+            const toggleButtons = document.querySelectorAll("[data-vacaciones-toggle]");
+            if (toggleButtons.length === 0) {
+                return;
+            }
+
+            const storageKey = "vacacionesExpandedRows";
+            const expandedRows = new Set(JSON.parse(sessionStorage.getItem(storageKey) || "[]"));
+
+            document.querySelectorAll("[data-vacaciones-row]").forEach((row) => {
+                const personaId = row.dataset.personaId;
+                if (!personaId || !expandedRows.has(personaId)) {
+                    return;
+                }
+
+                const detail = row.nextElementSibling;
+                if (!detail || !detail.matches("[data-vacaciones-detail]")) {
+                    return;
+                }
+
+                detail.removeAttribute("hidden");
+                row.classList.add("is-expanded");
+                detail.classList.add("is-expanded");
+
+                const button = row.querySelector("[data-vacaciones-toggle]");
+                if (button) {
+                    button.setAttribute("aria-expanded", "true");
+                }
+            });
+
+            toggleButtons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    const row = button.closest("[data-vacaciones-row]");
+                    const detail = row?.nextElementSibling;
+                    if (!row || !detail || !detail.matches("[data-vacaciones-detail]")) {
+                        return;
+                    }
+
+                    const isHidden = detail.hasAttribute("hidden");
+                    detail.toggleAttribute("hidden");
+                    button.setAttribute("aria-expanded", isHidden ? "true" : "false");
+                    row.classList.toggle("is-expanded", isHidden);
+                    detail.classList.toggle("is-expanded", isHidden);
+
+                    const personaId = row.dataset.personaId;
+                    if (!personaId) {
+                        return;
+                    }
+
+                    if (isHidden) {
+                        expandedRows.add(personaId);
+                    } else {
+                        expandedRows.delete(personaId);
+                    }
+
+                    sessionStorage.setItem(storageKey, JSON.stringify([...expandedRows]));
+                });
+            });
+        })();
+    </script>
+    @if (Model.CanCreate)
+    {
+        <script>
+            (() => {
+                const editModal = document.getElementById("vacacionesEditModal");
+                const deleteModal = document.getElementById("vacacionesDeleteModal");
+
+                if (editModal) {
+                    editModal.addEventListener("show.bs.modal", (event) => {
+                        const trigger = event.relatedTarget;
+                        if (!(trigger instanceof HTMLElement)) {
+                            return;
+                        }
+
+                        const vacacionId = trigger.dataset.vacacionId || "";
+                        const personaNombre = trigger.dataset.personaNombre || "";
+                        const fechaInicio = trigger.dataset.fechaInicio || "";
+                        const fechaFin = trigger.dataset.fechaFin || "";
+
+                        const idInput = editModal.querySelector("[data-vacaciones-edit-id]");
+                        const personaInput = editModal.querySelector("[data-vacaciones-edit-persona]");
+                        const inicioInput = editModal.querySelector("[data-vacaciones-edit-inicio]");
+                        const finInput = editModal.querySelector("[data-vacaciones-edit-fin]");
+
+                        if (idInput instanceof HTMLInputElement) idInput.value = vacacionId;
+                        if (personaInput instanceof HTMLInputElement) personaInput.value = personaNombre;
+                        if (inicioInput instanceof HTMLInputElement) inicioInput.value = fechaInicio;
+                        if (finInput instanceof HTMLInputElement) finInput.value = fechaFin;
+
+                        if (window.AppCalendar?.refresh) {
+                            window.AppCalendar.refresh(editModal);
+                            inicioInput?._flatpickr?.setDate(fechaInicio || null, false, "Y-m-d");
+                            finInput?._flatpickr?.setDate(fechaFin || null, false, "Y-m-d");
+                        }
+                    });
+                }
+
+                if (deleteModal) {
+                    deleteModal.addEventListener("show.bs.modal", (event) => {
+                        const trigger = event.relatedTarget;
+                        if (!(trigger instanceof HTMLElement)) {
+                            return;
+                        }
+
+                        const vacacionId = trigger.dataset.vacacionId || "";
+                        const personaNombre = trigger.dataset.personaNombre || "";
+                        const fechaRango = trigger.dataset.fechaRango || "";
+
+                        const idInput = deleteModal.querySelector("[data-vacaciones-delete-id]");
+                        const personaLabel = deleteModal.querySelector("[data-vacaciones-delete-persona]");
+                        const rangoLabel = deleteModal.querySelector("[data-vacaciones-delete-rango]");
+
+                        if (idInput instanceof HTMLInputElement) idInput.value = vacacionId;
+                        if (personaLabel) personaLabel.textContent = personaNombre;
+                        if (rangoLabel) rangoLabel.textContent = fechaRango;
+                    });
+                }
+            })();
+        </script>
+    }
+    @if (TempData["Success"] is string successMessage)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                window.AppToast?.show(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(successMessage)), "success");
+            });
+        </script>
+    }
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                window.AppToast?.show(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(errorMessage)), "danger");
+            });
+        </script>
+    }
+}

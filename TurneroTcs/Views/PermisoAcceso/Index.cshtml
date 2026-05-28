@@ -1,0 +1,100 @@
+@{
+    ViewData["Title"] = "Turnero | Permisos de acceso";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/app-data-surface.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/permiso-acceso-index.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/permiso-acceso-index.js" asp-append-version="true"></script>
+}
+
+<form id="permiso-acceso-token" method="post" style="display:none">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="container py-4 permiso-page">
+    <div class="permiso-controls app-data-filters mb-3">
+        <div class="permiso-controls-left">
+            <div class="permiso-filter-field permiso-filter-field--search">
+                <label class="permiso-label app-data-filter-label" for="permisoFilterSearch">Buscar</label>
+                <input id="permisoFilterSearch"
+                       type="text"
+                       class="form-control permiso-input app-data-filter-input"
+                       placeholder="Codigo, nombre o descripcion"
+                       data-filter-search />
+            </div>
+            <div class="permiso-filter-field">
+                <label class="permiso-label app-data-filter-label" for="permisoFilterModulo">Modulo</label>
+                <select id="permisoFilterModulo" class="form-select permiso-input app-data-filter-select" data-filter-modulo>
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="permiso-filter-field permiso-filter-actions">
+                <button type="button"
+                        class="btn btn-outline-secondary permiso-filter-clear permiso-filter-clear-icon app-data-filter-clear app-data-filter-clear-icon"
+                        data-filter-clear
+                        aria-label="Limpiar filtros"
+                        title="Limpiar filtros">
+                    <span class="permiso-filter-icon app-data-filter-icon" aria-hidden="true">
+                        <svg class="permiso-filter-icon-funnel app-data-filter-icon-funnel" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 5a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 14.5V19a1 1 0 0 1-.447.832l-3 2A1 1 0 0 1 9 21v-6.5L3.2 5.6A1 1 0 0 1 3 5Z" />
+                        </svg>
+                        <svg class="permiso-filter-icon-x app-data-filter-icon-x" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M4 4l6 6M10 4l-6 6" />
+                        </svg>
+                    </span>
+                    <span class="visually-hidden">Limpiar filtros</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm permiso-card app-data-card">
+        <div class="card-body p-0">
+            <div class="table-responsive permiso-table-wrap app-data-table-wrap">
+                <table class="table align-middle mb-0 permiso-table app-data-table">
+                    <thead>
+                        <tr>
+                            <th><span class="app-data-header-label">Codigo</span></th>
+                            <th><span class="app-data-header-label">Nombre</span></th>
+                            <th><span class="app-data-header-label">Modulo</span></th>
+                            <th><span class="app-data-header-label">Roles</span></th>
+                        </tr>
+                    </thead>
+                    <tbody data-permisos-body>
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                Cargando permisos...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="app-data-footer" data-permisos-footer hidden>
+            <div class="app-data-footer-copy">
+                <span class="app-data-footer-title" data-permisos-summary></span>
+                <div class="app-data-footer-meta">
+                    <span class="app-data-footer-pill" data-permisos-page-meta></span>
+                </div>
+            </div>
+            <div class="app-data-footer-actions">
+                <div class="app-data-page-size-control">
+                    <label class="app-data-page-size-label" for="permisoPageSize">Filas</label>
+                    <select id="permisoPageSize"
+                            class="form-select app-data-page-size-select"
+                            data-page-size>
+                        <option value="15">15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <nav class="app-data-pagination app-data-pagination-shell" aria-label="Paginacion" data-permisos-pagination></nav>
+            </div>
+        </div>
+    </div>
+</div>

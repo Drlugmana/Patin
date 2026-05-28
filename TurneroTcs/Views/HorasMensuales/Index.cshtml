@@ -1,0 +1,405 @@
+@model TurneroTcs.ViewModels.HorasMensualesViewModel
+
+@{
+    ViewData["Title"] = "Turnero | Horas Mensuales";
+    var currentSortField = ((string?)ViewBag.SortField ?? "").Trim().ToLowerInvariant();
+    var currentSortDirection = ((string?)ViewBag.SortDirection ?? "asc").Trim().ToLowerInvariant();
+    
+    string GetShortName(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return fullName;
+        var parts = fullName.Trim().Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return fullName;
+        if (parts.Length == 1) return parts[0];
+        return $"{parts[0]} {parts[parts.Length - 1]}";
+    }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/app-data-surface.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/horas-mensuales.css" asp-append-version="true" />
+}
+
+<div class="container py-4 horas-shell">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h2 class="h4 mb-1 horas-title">Horas mensuales</h2>
+            <div class="text-muted horas-subtitle">Resumen de horas normales y extra por persona</div>
+        </div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+            <a class="btn app-btn-primary"
+               asp-action="DescargarExcel"
+               asp-route-fromDate="@Model.FromDate"
+               asp-route-toDate="@Model.ToDate"
+               asp-route-equipoId="@Model.EquipoId"
+               asp-route-grupoId="@Model.GrupoId"
+               asp-route-personaId="@Model.PersonaId"
+               asp-route-pageSize="@Model.PageSize">
+                Descargar Excel
+            </a>
+        </div>
+    </div>
+
+    @{ 
+        ViewData["FilterAction"] = "Index";
+        ViewData["SortField"] = currentSortField;
+        ViewData["SortDirection"] = currentSortDirection;
+    }
+    <partial name="_HorasMensualesFilterBox" model="Model" />
+
+    <div class="card shadow-sm horas-card app-data-card">
+        <div class="card-body p-0">
+            <div class="table-responsive horas-table-responsive app-data-table-wrap">
+                <table class="table align-middle mb-0 horas-table app-data-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th colspan="1"><span class="app-data-header-label">Persona</span></th>
+                            <th class="text-center horas-col-header horas-col-total"><span class="app-data-header-label">Horas totales</span></th>
+                            <th class="text-center horas-col-header"><span class="app-data-header-label">Normales</span></th>
+                            <th class="text-center horas-col-header horas-col-extra"><span class="app-data-header-label">Extra</span></th>
+                            <th class="text-center horas-col-header horas-col-holiday"><span class="app-data-header-label">Feriado</span></th>
+                            <th class="text-center horas-col-header horas-col-night"><span class="app-data-header-label">Porcentaje Nocturnas</span></th>
+                            <th class="text-center horas-col-header horas-col-night">
+                                <button type="button" class="horas-sortable-header @(currentSortField == "horasnocturnas" ? "horas-sortable-active" : "")" data-sort-field="horasnocturnas" title="Ordenar por Nocturnas (20-6)">
+                                    <span class="app-data-header-label">Nocturnas (20-6)</span>
+                                    @if (currentSortField == "horasnocturnas")
+                                    {
+                                        <svg class="horas-sort-icon @(currentSortDirection == "asc" ? "horas-sort-asc" : "horas-sort-desc")" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                                            <path fill="currentColor" d="M7 14l5-5 5 5z"/>
+                                        </svg>
+                                    }
+                                </button>
+                            </th>
+                            <th class="text-center horas-col-header horas-col-weekend"><span class="app-data-header-label">Porcentaje Fin de semana</span></th>
+                            <th class="text-center horas-col-header horas-col-weekend">
+                                <button type="button" class="horas-sortable-header @(currentSortField == "horasfindesemana" ? "horas-sortable-active" : "")" data-sort-field="horasfindesemana" title="Ordenar por Fin de semana (horas)">
+                                    <span class="app-data-header-label">Fin de semana (horas)</span>
+                                    @if (currentSortField == "horasfindesemana")
+                                    {
+                                        <svg class="horas-sort-icon @(currentSortDirection == "asc" ? "horas-sort-asc" : "horas-sort-desc")" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                                            <path fill="currentColor" d="M7 14l5-5 5 5z"/>
+                                        </svg>
+                                    }
+                                </button>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items.Any())
+                        {
+                            foreach (var item in Model.Items)
+                            {
+                                <tr class="horas-row app-data-row" data-horas-row data-persona-id="@item.PersonaId">
+                                    <td class="horas-toggle">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary horas-toggle-btn"
+                                                data-horas-toggle
+                                                aria-expanded="false"
+                                                aria-controls="horas-detail-@item.PersonaId">
+                                            <svg class="horas-toggle-icon" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                                                <path fill="currentColor" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06z"/>
+                                            </svg>
+                                            <span class="visually-hidden">Ver detalle</span>
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <div class="horas-persona">
+                                            <div>@GetShortName(item.Nombre)</div>
+                                            <div class="text-muted" style="font-size: 0.875rem; margin-top: 2px;">@item.Equipo | @item.Grupo</div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center horas-col horas-col-total">@item.HorasTotales.ToString("0.##")</td>
+                                    <td class="text-center horas-col">@item.HorasNormales.ToString("0.##")</td>
+                                    <td class="text-center horas-col horas-col-extra @(item.HorasExtras > 0 ? "" : "horas-col-muted")">@item.HorasExtras.ToString("0.##")</td>
+                                    <td class="text-center horas-col horas-col-holiday @(item.HorasFeriadoTrabajadas > 0 ? "" : "horas-col-muted")">@item.HorasFeriadoTrabajadas.ToString("0.##")</td>
+                                    <td class="text-center horas-col horas-col-night">@item.PorcentajeNocturnas.ToString("0.#")%</td>
+                                    <td class="text-center horas-col horas-col-night">@item.HorasNocturnas20a6Display</td>
+                                    <td class="text-center horas-col horas-col-weekend">@item.PorcentajeFinSemana.ToString("0.#")%</td>
+                                    <td class="text-center horas-col horas-col-weekend">@item.HorasFinSemana.ToString("0.##")</td>
+                                </tr>
+                                <tr class="horas-detail" data-horas-detail hidden id="horas-detail-@item.PersonaId">
+                                    <td colspan="10">
+                                        <div class="horas-detail-grid">
+                                            @foreach (var semana in item.Semanas)
+                                            {
+                                                <div class="detail-week">
+                                                    <div class="detail-week-header">
+                                                        <span class="detail-week-date">@semana.WeekStart.ToString("dd MMM") - @semana.WeekEnd.ToString("dd MMM")</span>
+                                                        <a class="btn btn-outline-secondary btn-sm detail-week-link"
+                                                           target="_blank" rel="noopener"
+                                                           asp-controller="Calendario"
+                                                           asp-action="Index"
+                                                           asp-route-equipoId="@Model.EquipoId"
+                                                           asp-route-weekStart="@semana.WeekStart.ToString("yyyy-MM-dd")"
+                                                           asp-route-personaId="@item.PersonaId">
+                                                            Ver semana
+                                                        </a>
+                                                    </div>
+                                                    <div class="detail-week-stats">
+                                                        <div class="detail-week-stat">
+                                                            <span class="detail-week-stat-label">Total</span>
+                                                            <strong class="detail-week-stat-value">@semana.HorasTotales.ToString("0.##")</strong>
+                                                        </div>
+                                                        <div class="detail-week-stat">
+                                                            <span class="detail-week-stat-label">Normal</span>
+                                                            <strong class="detail-week-stat-value">@semana.HorasNormales.ToString("0.##")</strong>
+                                                        </div>
+                                                        <div class="detail-week-stat">
+                                                            <span class="detail-week-stat-label">Extra</span>
+                                                            <strong class="detail-week-stat-value @(semana.HorasExtras > 0 ? "detail-week-stat-value-extra" : "")">@semana.HorasExtras.ToString("0.##")</strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="10" class="text-center text-muted py-4">No hay registros para el periodo.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @{
+            var footerCurrentCount = Model.Items.Count;
+            var footerStartItem = Model.TotalCount == 0 ? 0 : ((Model.Page - 1) * Model.PageSize) + 1;
+            var footerEndItem = Model.TotalCount == 0 ? 0 : footerStartItem + footerCurrentCount - 1;
+            var footerVisiblePages = Enumerable.Range(1, Model.TotalPages)
+                .Where(p => p == 1 || p == Model.TotalPages || Math.Abs(p - Model.Page) <= 1)
+                .ToList();
+            var footerBaseRoute = new Dictionary<string, string?>
+            {
+                ["fromDate"] = Model.FromDate,
+                ["toDate"] = Model.ToDate,
+                ["equipoId"] = Model.EquipoId,
+                ["grupoId"] = Model.GrupoId,
+                ["personaId"] = Model.PersonaId,
+                ["pageSize"] = Model.PageSize.ToString()
+            };
+            string BuildPageUrl(int p)
+            {
+                var query = footerBaseRoute
+                    .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+                    .Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value!)}")
+                    .Append($"page={p}");
+                return Url.Action("Index", "HorasMensuales") + "?" + string.Join("&", query);
+            }
+        }
+        @if (Model.TotalCount > 0)
+        {
+            <div class="app-data-footer">
+                <div class="app-data-footer-copy">
+                    <span class="app-data-footer-title">Mostrando @footerStartItem-@footerEndItem de @Model.TotalCount personas</span>
+                    <div class="app-data-footer-meta">
+                        <span class="app-data-footer-pill">Pagina @Model.Page de @Model.TotalPages</span>
+                    </div>
+                </div>
+                <div class="app-data-footer-actions">
+                    <div class="app-data-page-size-control">
+                        <label class="app-data-page-size-label" for="horasFooterPageSize">Filas</label>
+                        <select id="horasFooterPageSize"
+                                class="form-select app-data-page-size-select"
+                                data-horas-footer-page-size>
+                            <option value="15" selected="@(Model.PageSize == 15 ? "selected" : null)">15</option>
+                            <option value="25" selected="@(Model.PageSize == 25 ? "selected" : null)">25</option>
+                            <option value="50" selected="@(Model.PageSize == 50 ? "selected" : null)">50</option>
+                            <option value="100" selected="@(Model.PageSize == 100 ? "selected" : null)">100</option>
+                        </select>
+                    </div>
+                    @if (Model.TotalPages > 1)
+                    {
+                    <nav class="app-data-pagination app-data-pagination-shell" aria-label="Paginacion">
+                        <a class="app-data-page-nav app-data-page-nav-edge @(Model.Page == 1 ? "is-disabled" : "")"
+                           href="@(Model.Page == 1 ? "#" : BuildPageUrl(1))"
+                           aria-label="Primera pagina">
+                            <span>Primera</span>
+                        </a>
+                        <a class="app-data-page-nav @(Model.Page == 1 ? "is-disabled" : "")"
+                           href="@(Model.Page == 1 ? "#" : BuildPageUrl(Model.Page - 1))"
+                           aria-label="Pagina anterior">
+                            <span class="app-data-page-nav-icon" aria-hidden="true">&lsaquo;</span>
+                            <span>Anterior</span>
+                        </a>
+                        <div class="app-data-page-links">
+                            @{
+                                int? previousVisiblePage = null;
+                            }
+                            @foreach (var p in footerVisiblePages)
+                            {
+                                @if (previousVisiblePage.HasValue && p - previousVisiblePage.Value > 1)
+                                {
+                                    <span class="app-data-page-gap" aria-hidden="true">...</span>
+                                }
+                                <a class="app-data-page-link @(p == Model.Page ? "is-active" : "")"
+                                   href="@(p == Model.Page ? "#" : BuildPageUrl(p))"
+                                   aria-current="@(p == Model.Page ? "page" : null)">
+                                    @p
+                                </a>
+                                previousVisiblePage = p;
+                            }
+                        </div>
+                        <a class="app-data-page-nav @(Model.Page == Model.TotalPages ? "is-disabled" : "")"
+                           href="@(Model.Page == Model.TotalPages ? "#" : BuildPageUrl(Model.Page + 1))"
+                           aria-label="Pagina siguiente">
+                            <span>Siguiente</span>
+                            <span class="app-data-page-nav-icon" aria-hidden="true">&rsaquo;</span>
+                        </a>
+                        <a class="app-data-page-nav app-data-page-nav-edge @(Model.Page == Model.TotalPages ? "is-disabled" : "")"
+                           href="@(Model.Page == Model.TotalPages ? "#" : BuildPageUrl(Model.TotalPages))"
+                           aria-label="Ultima pagina">
+                            <span>Ultima</span>
+                        </a>
+                    </nav>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const filtersForm = document.querySelector("[data-horas-filters]");
+        if (filtersForm) {
+            let submitTimer;
+            const pageInput = filtersForm.querySelector("input[name='page']");
+            const pageSizeInput = filtersForm.querySelector("input[name='pageSize']");
+            const footerPageSize = document.querySelector("[data-horas-footer-page-size]");
+            const fromDateInput = filtersForm.querySelector("input[name='fromDate']");
+            const toDateInput = filtersForm.querySelector("input[name='toDate']");
+            const dateRangeInput = filtersForm.querySelector("[data-horas-date-range]");
+            const submitFilters = () => {
+                if (pageInput) {
+                    pageInput.value = "1";
+                }
+                clearTimeout(submitTimer);
+                submitTimer = setTimeout(() => filtersForm.submit(), 120);
+            };
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, "0");
+                const day = String(date.getDate()).padStart(2, "0");
+                return `${year}-${month}-${day}`;
+            };
+            if (dateRangeInput && window.flatpickr && fromDateInput && toDateInput) {
+                window.flatpickr(dateRangeInput, {
+                    mode: "range",
+                    dateFormat: "Y-m-d",
+                    defaultDate: [fromDateInput.value, toDateInput.value].filter(Boolean),
+                    showMonths: 2,
+                    allowInput: false,
+                    disableMobile: true,
+                    monthSelectorType: "static",
+                    prevArrow: "<span aria-hidden='true'>&lsaquo;</span>",
+                    nextArrow: "<span aria-hidden='true'>&rsaquo;</span>",
+                    locale: {
+                        rangeSeparator: " - "
+                    },
+                    onChange: (selectedDates) => {
+                        if (selectedDates.length !== 2) {
+                            return;
+                        }
+                        const [start, end] = selectedDates
+                            .slice()
+                            .sort((left, right) => left.getTime() - right.getTime());
+                        fromDateInput.value = formatDate(start);
+                        toDateInput.value = formatDate(end);
+                        submitFilters();
+                    }
+                });
+            }
+            filtersForm.querySelectorAll("select").forEach((field) => {
+                field.addEventListener("change", () => {
+                    submitFilters();
+                });
+            });
+
+            footerPageSize?.addEventListener("change", () => {
+                if (pageSizeInput) {
+                    pageSizeInput.value = footerPageSize.value;
+                }
+                if (pageInput) {
+                    pageInput.value = "1";
+                }
+                filtersForm.submit();
+            });
+        }
+
+        const expandedStorageKey = "horasMensualesExpandedRows";
+        const expandedRows = new Set(
+            JSON.parse(sessionStorage.getItem(expandedStorageKey) || "[]")
+        );
+
+        document.querySelectorAll("[data-horas-row]").forEach((row) => {
+            const personaId = row.dataset.personaId;
+            if (!personaId || !expandedRows.has(personaId)) return;
+            const detail = row.nextElementSibling;
+            if (!detail?.matches("[data-horas-detail]")) return;
+            detail.removeAttribute("hidden");
+            row.classList.add("is-expanded");
+            detail.classList.add("is-expanded");
+            const btn = row.querySelector("[data-horas-toggle]");
+            if (btn) {
+                btn.setAttribute("aria-expanded", "true");
+            }
+        });
+
+        document.querySelectorAll("[data-horas-toggle]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const row = btn.closest("[data-horas-row]");
+                const detail = row?.nextElementSibling;
+                if (!detail) return;
+                const isHidden = detail.hasAttribute("hidden");
+                detail.toggleAttribute("hidden");
+                btn.setAttribute("aria-expanded", isHidden ? "true" : "false");
+                row.classList.toggle("is-expanded", isHidden);
+                detail.classList.toggle("is-expanded", isHidden);
+                const personaId = row.dataset.personaId;
+                if (personaId) {
+                    if (isHidden) {
+                        expandedRows.add(personaId);
+                    } else {
+                        expandedRows.delete(personaId);
+                    }
+                    sessionStorage.setItem(expandedStorageKey, JSON.stringify([...expandedRows]));
+                }
+            });
+        });
+
+        // Sortable header functionality
+        document.querySelectorAll(".horas-sortable-header").forEach((btn) => {
+            btn.addEventListener("click", function (e) {
+                e.preventDefault();
+                const field = this.getAttribute("data-sort-field");
+                const sortFieldInput = filtersForm.querySelector("input[name='sortField']");
+                const sortDirectionInput = filtersForm.querySelector("input[name='sortDirection']");
+                const pageInput = filtersForm.querySelector("input[name='page']");
+                
+                if (!sortFieldInput || !sortDirectionInput) return;
+                
+                const currentField = sortFieldInput.value;
+                const currentDirection = sortDirectionInput.value;
+                
+                if (field === currentField) {
+                    sortDirectionInput.value = currentDirection === "asc" ? "desc" : "asc";
+                } else {
+                    sortFieldInput.value = field;
+                    sortDirectionInput.value = "asc";
+                }
+                
+                if (pageInput) {
+                    pageInput.value = "1";
+                }
+                
+                filtersForm.submit();
+            });
+        });
+    </script>
+}

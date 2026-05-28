@@ -1,0 +1,630 @@
+@model TurneroTcs.ViewModels.CalendarioViewModel
+
+@{
+    ViewData["Title"] = "Calendario Semanal";
+    var selectedEquipoName = Model.Equipos.FirstOrDefault(e => e.Selected)?.Text ?? string.Empty;
+    var gruposIds = string.Join(",", Model.Grupos.Select(g => g.Value));
+}
+
+@section Styles {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+          rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/weekly-calendar.css" asp-append-version="true" />
+}
+
+@{
+    // Keep the highest-privilege role for client-side behavior.
+    var roleLabel = User.IsInRole("SuperAdmin")
+        ? "SuperAdmin"
+        : User.IsInRole("Admin")
+            ? "Admin"
+            : User.IsInRole("Lider")
+                ? "Lider"
+                : "Usuario";
+}
+
+<div class="calendar-shell" data-equipo="@selectedEquipoName" data-equipo-id="@Model.SelectedEquipoId"
+    data-current-persona-id="@Model.CurrentPersonaId" data-user-role="@roleLabel" data-cambio-tipo-id="CAM"
+    data-calamidad-tipo-id="CAL" data-grupos-ids="@gruposIds"
+    data-can-add="@Model.CanCreateTurno.ToString().ToLowerInvariant()"
+    data-can-edit-any-shift="@Model.CanEditTurno.ToString().ToLowerInvariant()"
+    data-can-delete-shift="@Model.CanDeleteTurno.ToString().ToLowerInvariant()"
+    data-can-request-cambio-turno="@Model.CanCreateCambioTurno.ToString().ToLowerInvariant()"
+    data-can-request-permiso="@Model.CanCreatePermiso.ToString().ToLowerInvariant()"
+    data-can-create-calamidad="@Model.CanCreateCalamidad.ToString().ToLowerInvariant()">
+    <section class="calendar-hero">
+        <div class="hero-text">
+        </div>
+        <div class="hero-controls">
+            @if (User.IsInRole("SuperAdmin") || User.IsInRole("Admin"))
+            {
+                <form class="team-select team-select--top" method="get">
+                    <label for="equipoId">Equipo</label>
+                    <select id="equipoId" name="equipoId" onchange="this.form.submit()">
+                        @foreach (var equipo in Model.Equipos)
+                        {
+                            <option value="@equipo.Value" selected="@(equipo.Selected ? "selected" : null)">
+                                @equipo.Text
+                            </option>
+                        }
+                    </select>
+                </form>
+            }
+            <div class="calendar-nav monthly-nav">
+                @if (User.IsInRole("SuperAdmin") || User.IsInRole("Admin") || User.IsInRole("Lider"))
+                {
+                    <div class="filter-field">
+                        <label for="calendarGrupoFilter">Grupo</label>
+                        <select id="calendarGrupoFilter" class="filter-select" data-filter-grupo>
+                            <option value="">Todos los grupos</option>
+                            @foreach (var grupo in Model.Grupos)
+                            {
+                                <option value="@grupo.Value">@grupo.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label for="calendarPersonaFilter">Persona</label>
+                        <select id="calendarPersonaFilter" class="filter-select" data-filter-persona>
+                            <option value="">Todas las personas</option>
+                            @foreach (var persona in Model.Personas)
+                            {
+                                var gruposValue = string.Join(",", persona.GrupoIds ?? Enumerable.Empty<string>());
+                                <option value="@persona.Value" data-grupos="@gruposValue">
+                                    @persona.Text
+                                </option>
+                            }
+                        </select>
+                    </div>
+                }
+                <div class="filter-field">
+                    <label for="calendarMonth">Mes</label>
+                    <select id="calendarMonth" class="month-select" data-month-select
+                            aria-label="Seleccionar mes"></select>
+                </div>
+                <div class="filter-field">
+                    <label for="calendarYear">Ano</label>
+                    <select id="calendarYear" class="year-select" data-year-select
+                            aria-label="Seleccionar ano"></select>
+                </div>
+                <button type="button" class="btn-icon-toggle btn-filter-toggle btn-filter-toggle--mine"
+                        data-filter-mine-toggle aria-pressed="false" aria-label="Mostrar solo mis turnos"
+                        data-bs-toggle="tooltip" data-bs-title="Mostrar solo mis turnos">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.87 0-7 1.79-7 4v1h14v-1c0-2.21-3.13-4-7-4z"></path>
+                    </svg>
+                    <span class="visually-hidden">Mis turnos</span>
+                </button>
+                @if (User.IsInRole("SuperAdmin") || User.IsInRole("Admin") || User.IsInRole("Lider"))
+                {
+                    <button type="button" class="btn-icon-toggle btn-filter-toggle btn-filter-toggle--absent"
+                            data-filter-absent-toggle aria-pressed="false" aria-label="Mostrar personas ausentes por calamidad"
+                            data-bs-toggle="tooltip" data-bs-title="Mostrar personas ausentes por calamidad">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M16 11c1.66 0 3-1.34 3-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.67 0-8 1.34-8 4v2h10v-2c0-1.38.56-2.63 1.46-3.56C10.36 13.16 9.06 13 8 13zm8 0c-.29 0-.62.02-.97.05A4.98 4.98 0 0 1 17 17v2h7v-2c0-2.66-5.33-4-8-4z"></path>
+                        </svg>
+                        <span class="visually-hidden">Ver ausentes</span>
+                    </button>
+                    <button type="button" class="btn-icon filter-clear" data-filter-clear aria-label="Limpiar filtros"
+                            data-bs-toggle="tooltip" data-bs-title="Limpiar filtros">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M4 5h16l-6 7v5l-4 2v-7L4 5z"></path>
+                        </svg>
+                    </button>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="calendar-board">
+        <div class="calendar-toolbar">
+            <div class="calendar-nav weekly-nav">
+                @if (!User.IsInRole("Usuario"))
+                {
+                    <button type="button" class="btn-ghost btn-clear-previews" data-clear-previews
+                            aria-label="Cancelar previsualizaciones">
+                        Cancelar
+                    </button>
+                }
+                <div class="btn-group calendar-save-actions" data-save-split>
+                    <button type="button" class="btn btn-primary btn-save-previews" data-save-previews>
+                        <i class="bi bi-save"></i>
+                        Guardar semana
+                    </button>
+                    <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-save-toggle
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="visually-hidden">Opciones de guardado</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" data-save-menu>
+                        <li>
+                            <button type="button" class="dropdown-item" data-save-previews-all>
+                                Guardar todas las semanas
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <button type="button" class="vista-amplia-toggle" data-vista-amplia-toggle aria-pressed="false">
+                    <span data-vista-amplia-label>Vista amplia</span>
+                </button>
+                <button type="button" class="nav-btn" data-week-nav="prev" aria-label="Semana anterior">
+                    <span aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+                            <polyline points="15 6 9 12 15 18" fill="none" stroke="currentColor" stroke-width="2"
+                                      stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </span>
+                </button>
+                <div class="nav-range" data-week-range>Semana</div>
+                <button type="button" class="nav-btn" data-week-nav="next" aria-label="Semana siguiente">
+                    <span aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+                            <polyline points="9 6 15 12 9 18" fill="none" stroke="currentColor" stroke-width="2"
+                                      stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </span>
+                </button>
+            </div>
+            <div class="calendar-nav monthly-nav">
+                @if (User.IsInRole("SuperAdmin") || User.IsInRole("Admin") || User.IsInRole("Lider"))
+                {
+                    <button type="button" class="btn-secondary btn-panel" data-generar-turnos-open>
+                        Generar turnos
+                    </button>
+                    <button type="button" class="btn-ghost btn-download-calendar" data-download-calendar>
+                        Descargar
+                    </button>
+                }
+                <button type="button" class="btn-secondary btn-vacation" data-vacation-open>Vacaciones</button>
+                @if (User.IsInRole("SuperAdmin") || User.IsInRole("Admin"))
+                {
+                    <button type="button" class="btn-delete-week btn-delete-week-right" data-delete-current-week>
+                        Eliminar semana
+                    </button>
+                    <button type="button" class="btn-delete-week btn-delete-week-right" data-delete-selected-turnos hidden disabled>
+                        Eliminar turnos
+                    </button>
+                }
+            </div>
+        </div>
+        <div class="calendar-empty" data-calendar-empty hidden>
+            <div class="empty-card">
+                <p class="empty-title">No hay turnos para mostrar</p>
+                <p class="empty-subtitle">Prueba con otro equipo o semana.</p>
+            </div>
+        </div>
+        <div class="pending-actions-bar" data-pending-bar hidden>
+            <div class="pending-actions-head">
+                <span class="pending-count" data-pending-count>0 cambios pendientes</span>
+                <div class="pending-actions-buttons">
+                    <button type="button" class="btn btn-primary btn-sm" data-pending-confirm-all>
+                        Confirmar todo
+                    </button>
+                    <button type="button" class="btn btn-light btn-sm" data-pending-cancel-all>
+                        Cancelar todo
+                    </button>
+                </div>
+            </div>
+            <div class="status-list" aria-live="polite" data-status-list></div>
+        </div>
+        <div class="calamidad-replace-bar" data-calamidad-replace-bar hidden>
+            <div class="calamidad-replace-copy">
+                <strong data-calamidad-replace-title>Modo reemplazos activo</strong>
+                <span data-calamidad-replace-status>Selecciona a quien reemplaza en el calendario.</span>
+                <div class="calamidad-replace-mode" data-calamidad-replace-mode>
+                    <button type="button" class="btn btn-outline-primary btn-sm is-active" data-calamidad-mode-btn="SWAP">
+                        Usar turno existente
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-calamidad-mode-btn="NEW_SHIFT">
+                        Crear turno nuevo
+                    </button>
+                </div>
+                <div class="calamidad-source-tools" data-calamidad-source-tools>
+                    <select class="form-select form-select-sm" data-calamidad-source-select>
+                        <option value="">Selecciona turno ausente</option>
+                    </select>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-calamidad-source-assign disabled>
+                        Seleccionar turno
+                    </button>
+                </div>
+                <div class="calamidad-replace-new-tools" data-calamidad-new-tools hidden>
+                    <select class="form-select form-select-sm" data-calamidad-new-person>
+                        <option value="">Selecciona persona para turno nuevo</option>
+                    </select>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-calamidad-new-assign disabled>
+                        Asignar turno nuevo
+                    </button>
+                </div>
+            </div>
+            <div class="calamidad-replace-actions">
+                <button type="button" class="btn btn-primary btn-sm" data-calamidad-save-replacements disabled>Guardar calamidad y reemplazos</button>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-calamidad-confirm-no-replacements>No requiere reemplazos</button>
+                <button type="button" class="btn btn-light btn-sm" data-calamidad-cancel-replacements>Cancelar</button>
+            </div>
+        </div>
+        <div class="calendar-legend-personas" data-legend-personas hidden></div>
+        <div class="calendar-grid" data-calendar-grid></div>
+        <div class="calendar-grid-amplia" data-calendar-grid-amplia hidden></div>
+    </section>
+    <div class="card-context" data-card-context hidden>
+        <button type="button" class="context-item" data-context-action="permiso">Solicitar permiso</button>
+        <button type="button" class="context-item" data-context-action="calamidad">Ingresar calamidad</button>
+        <button type="button" class="context-item" data-context-action="cambiar-grupo">Cambiar grupo</button>
+        <div class="context-extra-editor" data-context-extra-editor hidden>
+            <label class="context-extra-toggle" for="contextExtraCheckbox">
+                <input id="contextExtraCheckbox" type="checkbox" data-context-extra-checkbox />
+                <span>Es turno extra</span>
+            </label>
+            <button type="button" class="context-extra-save" data-context-extra-save>Guardar</button>
+        </div>
+        <div class="context-extra-info" data-context-extra-info hidden></div>
+    </div>
+    <div class="modal fade" id="calamidadModal" tabindex="-1" aria-labelledby="calamidadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content calendar-confirm-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="calamidadModalLabel">Ingresar calamidad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="calamidad-modal-summary">
+                        <p><strong>Persona:</strong> <span data-calamidad-persona>-</span></p>
+                        <p><strong>Fecha inicio:</strong> <span data-calamidad-fecha-inicio>-</span></p>
+                    </div>
+                    <div class="form-field">
+                        <label for="calamidadFechaFin">Fecha fin</label>
+                        <input type="date" id="calamidadFechaFin" class="form-control" data-calamidad-fecha-fin />
+                    </div>
+                    <div class="form-field">
+                        <label for="calamidadMotivo">Motivo</label>
+                        <textarea id="calamidadMotivo" rows="3" class="form-control" maxlength="240" data-calamidad-motivo></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" data-calamidad-confirm>Registrar calamidad</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="calamidadDecisionModal" tabindex="-1" aria-labelledby="calamidadDecisionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content calendar-confirm-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="calamidadDecisionModalLabel" data-calamidad-decision-title>Confirmar accion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-message" data-calamidad-decision-message></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-primary" data-calamidad-decision-deny hidden></button>
+                    <button type="button" class="btn btn-primary" data-calamidad-decision-confirm>Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="cambiarGrupoModal" tabindex="-1" aria-labelledby="cambiarGrupoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cambiarGrupoModalLabel">Cambiar grupo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="cambiar-grupo-modal-summary">
+                        <p><strong>Persona:</strong> <span data-cambiar-grupo-persona>-</span></p>
+                        <p><strong>Grupo actual:</strong> <span data-cambiar-grupo-actual>-</span></p>
+                        <p><strong>Fecha turno:</strong> <span data-cambiar-grupo-fecha>-</span></p>
+                    </div>
+                    <div class="form-field">
+                        <label for="cambiarGrupoSelect">Nuevo grupo</label>
+                        <select id="cambiarGrupoSelect" class="form-control" data-cambiar-grupo-select>
+                            <option value="">Selecciona nuevo grupo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" data-cambiar-grupo-confirm>Cambiar grupo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="cambioTurnoModal" tabindex="-1" aria-labelledby="cambioTurnoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cambioTurnoLabel">Confirmar cambio de turno</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-message" data-cambio-message></p>
+                    <div class="form-field">
+                        <label for="cambioMotivo">Motivo</label>
+                        <textarea id="cambioMotivo" rows="3" class="form-control" data-cambio-motivo></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" data-cambio-confirm>Enviar solicitud</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteTurnoModal" tabindex="-1" aria-labelledby="deleteTurnoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content calendar-confirm-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteTurnoModalLabel" data-delete-title>Eliminar turno</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="delete-confirm-content">
+                        <span class="delete-confirm-icon" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" role="img" focusable="false" aria-hidden="true">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.963 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.707c.89 0 1.438-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                            </svg>
+                        </span>
+                        <p class="modal-message" data-delete-message>Eliminar este turno guardado?</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" data-delete-confirm>Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="sobrecargoTurnoModal" tabindex="-1" aria-labelledby="sobrecargoTurnoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content calendar-confirm-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sobrecargoTurnoModalLabel" data-overload-title>Turno con sobrecarga</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="delete-confirm-content">
+                        <span class="overload-confirm-icon" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" role="img" focusable="false" aria-hidden="true">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.963 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.707c.89 0 1.438-.99.982-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <p class="modal-message" data-overload-message>
+                                Esta persona ya tiene sus turnos completos en esta semana. Si agregas este turno sera un sobrecargo.
+                            </p>
+                            <ul class="overload-warning-list" data-overload-list></ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning" data-overload-confirm>Agregar con sobrecarga</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="generarTurnosModalCalendar" tabindex="-1"
+         aria-labelledby="generarTurnosModalCalendarLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="generarTurnosModalCalendarLabel">Generar turnos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Genera automáticamente los turnos basándose en la planificación configurada.</p>
+                    <div class="mb-3">
+                        <label for="fechaInicioCalendar" class="form-label">Semana de inicio</label>
+                        <input type="date" class="form-control" id="fechaInicioCalendar">
+                        <div class="form-text">Selecciona la semana de inicio (no se permiten semanas pasadas).</div>
+                    </div>
+                    <div class="row g-3 mb-3">
+	                        <div class="col-lg-4">
+                            <label for="numeroSemanasCalendar" class="form-label">Número de semanas</label>
+                            <input type="number" class="form-control" id="numeroSemanasCalendar" min="1" max="52" value="4"
+                                   placeholder="Ingresa el número de semanas">
+                            <div class="form-text">Especifica cuántas semanas de turnos deseas generar (1-52).</div>
+                        </div>
+	                        <div class="col-lg-4">
+	                            <label for="nivelDescanso7HorasCalendar" class="form-label">Uso de descanso 7h</label>
+	                            <select class="form-select" id="nivelDescanso7HorasCalendar">
+	                                <option value="none">No usar (nunca consecutivos)</option>
+	                                <option value="low" selected>Bajo</option>
+	                                <option value="medium">Medio</option>
+	                                <option value="high">Alto</option>
+	                            </select>
+	                            <div class="form-text">No usar mantiene 8h obligatorio; Bajo reintenta con 7h solo si falla; Medio conserva 7h luego del primer fallback; Alto usa 7h desde el inicio.</div>
+	                        </div>
+	                        <div class="col-lg-4">
+	                            <label for="nivelFinesSemanaConsecutivosCalendar" class="form-label">Evitar fines de semana consecutivos</label>
+	                            <select class="form-select" id="nivelFinesSemanaConsecutivosCalendar">
+	                                <option value="none">No usar</option>
+	                                <option value="low" selected>Bajo</option>
+	                                <option value="medium">Medio</option>
+	                                <option value="high">Alto</option>
+	                            </select>
+	                            <div class="form-text">No usar bloquea por completo fines de semana seguidos; Bajo los evita como preferencia suave; Medio empuja mas fuerte; Alto prioriza al maximo cortar repeticiones.</div>
+	                        </div>
+	                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="balancearHorasCalendar" checked>
+                            <label class="form-check-label" for="balancearHorasCalendar">Balancear horas entre empleados</label>
+                        </div>
+                        <div class="form-text">Cuando está activo, el algoritmo distribuye las horas equitativamente. Desactivarlo puede mejorar la velocidad de generación.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" id="btnConfirmarGenerarTurnosCalendar">
+                        Confirmar y generar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-scrim" data-panel-scrim hidden></div>
+    <aside class="side-panel" data-panel hidden>
+        <div class="panel-header">
+            <div>
+                <h3>Generar turnos</h3>
+                <p>Selecciona persona, turnos y rango de fechas para previsualizar.</p>
+            </div>
+            <button type="button" class="btn-ghost btn-panel-close" data-panel-close aria-label="Cerrar">Cerrar</button>
+        </div>
+        <form class="panel-form" method="post" asp-controller="RegistroTurno" asp-action="Generate">
+            @Html.AntiForgeryToken()
+            <div class="form-field">
+                <label for="personaId">Persona</label>
+                <select id="personaId" name="PersonaId" required>
+                    <option value="">Seleccionar persona</option>
+                    @foreach (var persona in Model.Personas)
+                    {
+                        <option value="@persona.Value" data-color="@persona.Color">@persona.Text</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="grupoId">Grupo</label>
+                <select id="grupoId" name="GrupoId" data-grupo-select disabled>
+                    <option value="">Sin grupo</option>
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="tipoTurnoIds">Turnos (rotacion)</label>
+                <select id="tipoTurnoIds" name="TipoTurnoIds" multiple size="6" required>
+                    @foreach (var turno in Model.TiposTurno)
+                    {
+                        <option value="@turno.Value">@turno.Text</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="fechaInicio">Fecha inicio</label>
+                <input id="fechaInicio" name="FechaInicio" type="date" required />
+            </div>
+            <div class="form-field">
+                <label for="fechaFin">Fecha fin</label>
+                <input id="fechaFin" name="FechaFin" type="date" required />
+            </div>
+
+            <div class="panel-actions">
+                <button type="button" class="btn-secondary" data-preview-btn>Previsualizar</button>
+                <button type="button" class="btn-ghost" data-clear-btn>Limpiar</button>
+            </div>
+            <p class="actions-note">Previsualiza y usa Guardar en la barra superior para confirmar.</p>
+        </form>
+    </aside>
+
+    <div class="panel-scrim" data-vacation-scrim hidden></div>
+    <aside class="side-panel vacation-panel" data-vacation-panel data-vacation-tipo-id="VAC" hidden>
+        <div class="panel-header">
+            <div>
+                <h3>Solicitar vacaciones</h3>
+                <p>Selecciona el rango de fechas para tu solicitud.</p>
+            </div>
+            <button type="button" class="btn-ghost btn-panel-close" data-vacation-close
+                    aria-label="Cerrar">Cerrar</button>
+        </div>
+
+        <div class="vacation-controls">
+            <label for="vacationYear">Ano</label>
+            <select id="vacationYear" data-vacation-year></select>
+        </div>
+
+        <div class="vacation-calendar" data-vacation-calendar></div>
+
+        <div class="vacation-summary" data-vacation-summary>
+            <strong>Rango seleccionado:</strong>
+            <span>Selecciona fechas para continuar.</span>
+        </div>
+
+        <div class="panel-actions">
+            <button type="button" class="btn-ghost" data-vacation-clear>Limpiar</button>
+            <button type="button" class="btn-primary" data-vacation-apply disabled>Continuar</button>
+        </div>
+
+        <div class="vacation-review" data-vacation-review hidden>
+            <h4>Resumen</h4>
+            <p class="vacation-review-range" data-vacation-review-range></p>
+            <p class="vacation-review-days" data-vacation-review-days></p>
+            <div class="panel-actions">
+                <button type="button" class="btn-primary" data-vacation-submit>Solicitar</button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="panel-scrim" data-permiso-scrim hidden></div>
+    <aside class="side-panel permiso-panel" data-permiso-panel data-permiso-tipo-id="PER" hidden>
+        <div class="panel-header">
+            <div>
+                <h3>Solicitar permiso</h3>
+                <p>Selecciona el dia y el rango horario.</p>
+            </div>
+            <button type="button" class="btn-ghost btn-panel-close" data-permiso-close
+                    aria-label="Cerrar">Cerrar</button>
+        </div>
+
+        <div class="vacation-controls">
+            <label for="permisoYear">Ano</label>
+            <select id="permisoYear" data-permiso-year></select>
+        </div>
+
+        <div class="vacation-calendar permiso-calendar" data-permiso-calendar></div>
+
+        <div class="permiso-times">
+            <div class="form-field">
+                <label for="permisoInicio">Hora inicio</label>
+                <input id="permisoInicio" type="time" data-permiso-inicio />
+            </div>
+            <div class="form-field">
+                <label for="permisoFin">Hora fin</label>
+                <input id="permisoFin" type="time" data-permiso-fin />
+            </div>
+        </div>
+
+        <div class="form-field">
+            <label for="permisoMotivo">Motivo</label>
+            <textarea id="permisoMotivo" rows="3" data-permiso-motivo></textarea>
+        </div>
+
+        <div class="vacation-summary" data-permiso-summary>
+            <strong>Dia seleccionado:</strong>
+            <span>Selecciona un dia para continuar.</span>
+        </div>
+
+        <div class="panel-actions">
+            <button type="button" class="btn-ghost" data-permiso-clear>Limpiar</button>
+            <button type="button" class="btn-primary" data-permiso-apply disabled>Continuar</button>
+        </div>
+
+        <div class="vacation-review" data-permiso-review hidden>
+            <h4>Resumen</h4>
+            <p class="vacation-review-range" data-permiso-review-date></p>
+            <p class="vacation-review-days" data-permiso-review-time></p>
+            <div class="panel-actions">
+                <button type="button" class="btn-primary" data-permiso-submit>Solicitar</button>
+            </div>
+        </div>
+    </aside>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="~/js/weekly-calendar.core.js" asp-append-version="true"></script>
+    <script src="~/js/weekly-calendar.render.js" asp-append-version="true"></script>
+    <script src="~/js/weekly-calendar.data.js" asp-append-version="true"></script>
+    <script src="~/js/weekly-calendar.interactions.js" asp-append-version="true"></script>
+    <script src="~/js/weekly-calendar.js" asp-append-version="true"></script>
+}

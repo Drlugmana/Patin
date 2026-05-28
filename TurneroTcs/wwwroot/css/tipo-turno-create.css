@@ -1,0 +1,75 @@
+:root {
+  --turno-create-ink: #1e252b;
+  --turno-create-muted: #66737f;
+  --turno-create-border: rgba(30, 37, 43, 0.12);
+  --turno-create-card: rgba(255, 255, 255, 0.78);
+  --turno-create-shadow: 0 18px 50px rgba(21, 30, 34, 0.16);
+}
+
+body {
+  background: radial-gradient(circle at top, #f7f5ef 0%, #eef2f5 45%, #e9f0ef 100%);
+  color: var(--turno-create-ink);
+}
+
+.turno-create-card {
+  border-radius: 24px;
+  border: 1px solid var(--turno-create-border);
+  background: var(--turno-create-card);
+  box-shadow: var(--turno-create-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.turno-create-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.turno-create-subtitle {
+  color: var(--turno-create-muted);
+}
+
+.turno-create-badge {
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.turno-create-label {
+  font-weight: 600;
+  color: var(--turno-create-ink);
+}
+
+.turno-create-input {
+  border-radius: 14px;
+  border: 1px solid rgba(31, 77, 70, 0.2);
+  padding: 0.65rem 0.8rem;
+  box-shadow: 0 10px 20px rgba(25, 54, 50, 0.08);
+}
+
+.turno-create-input:focus {
+  border-color: rgba(31, 77, 70, 0.45);
+  box-shadow: 0 0 0 3px rgba(31, 77, 70, 0.2);
+}
+
+.turno-create-primary {
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  box-shadow: 0 12px 22px rgba(31, 77, 70, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.turno-create-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(31, 77, 70, 0.22);
+}
+
+.turno-create-secondary {
+  border-radius: 999px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.turno-create-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(31, 77, 70, 0.15);
+}

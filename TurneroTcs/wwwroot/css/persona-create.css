@@ -1,0 +1,145 @@
+:root {
+  --persona-create-ink: #1e252b;
+  --persona-create-muted: #66737f;
+  --persona-create-accent: #1f4d46;
+  --persona-create-border: rgba(30, 37, 43, 0.12);
+  --persona-create-card: rgba(255, 255, 255, 0.78);
+  --persona-create-shadow: 0 18px 50px rgba(21, 30, 34, 0.16);
+}
+
+body {
+  background: radial-gradient(circle at top, #f7f5ef 0%, #eef2f5 45%, #e9f0ef 100%);
+  color: var(--persona-create-ink);
+}
+
+.persona-create-card {
+  border-radius: 24px;
+  border: 1px solid var(--persona-create-border);
+  background: var(--persona-create-card);
+  box-shadow: var(--persona-create-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.persona-create-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.persona-create-subtitle {
+  color: var(--persona-create-muted);
+}
+
+.persona-create-badge {
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.persona-create-label {
+  font-weight: 600;
+  color: var(--persona-create-ink);
+}
+
+.persona-create-input,
+.persona-create-select {
+  border-radius: 14px;
+  border: 1px solid rgba(31, 77, 70, 0.2);
+  padding: 0.65rem 0.8rem;
+  box-shadow: 0 10px 20px rgba(25, 54, 50, 0.08);
+}
+
+.persona-create-color {
+  border-radius: 14px;
+  border: 1px solid rgba(31, 77, 70, 0.2);
+  padding: 0.4rem;
+  height: 44px;
+  box-shadow: 0 10px 20px rgba(25, 54, 50, 0.08);
+}
+
+.persona-create-input:focus,
+.persona-create-select:focus,
+.persona-create-color:focus {
+  border-color: rgba(31, 77, 70, 0.45);
+  box-shadow: 0 0 0 3px rgba(31, 77, 70, 0.2);
+}
+
+.persona-create-primary {
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  box-shadow: 0 12px 22px rgba(31, 77, 70, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.persona-create-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(31, 77, 70, 0.22);
+}
+
+.persona-create-secondary {
+  border-radius: 999px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.persona-create-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(31, 77, 70, 0.15);
+}
+
+.multi-select {
+  position: relative;
+}
+
+.multi-select-toggle {
+  width: 100%;
+  text-align: left;
+  border-radius: 14px;
+  border: 1px solid rgba(31, 77, 70, 0.2);
+  padding: 0.65rem 0.8rem;
+  background: #fff;
+  box-shadow: 0 10px 20px rgba(25, 54, 50, 0.08);
+}
+
+.multi-select-toggle:focus {
+  border-color: rgba(31, 77, 70, 0.45);
+  box-shadow: 0 0 0 3px rgba(31, 77, 70, 0.2);
+  outline: none;
+}
+
+.multi-select-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  background: #fff;
+  border: 1px solid rgba(31, 77, 70, 0.2);
+  border-radius: 14px;
+  box-shadow: 0 18px 35px rgba(21, 30, 34, 0.16);
+  padding: 0.5rem 0.6rem;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  z-index: 10;
+}
+
+.multi-select-menu.is-open {
+  display: block;
+}
+
+.multi-select-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.multi-select-item input {
+  margin: 0;
+  accent-color: var(--persona-create-accent);
+}
+
+.multi-select-item:hover {
+  background: rgba(31, 77, 70, 0.08);
+}

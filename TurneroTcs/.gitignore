@@ -1,0 +1,36 @@
+# Build outputs
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.csproj.user
+
+# Logs
+*.log
+
+# Local database files
+app.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Local app settings (often contains secrets)
+appsettings.Development.json
+appsettings.Local.json
+
+# Publish/Test artifacts
+publish/
+TestResults/
+artifacts/
+
+# Node
+node_modules/
+package-lock.json
+
+# Frontend vendor assets (restored via LibMan)
+wwwroot/lib/

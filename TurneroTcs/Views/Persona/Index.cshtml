@@ -1,0 +1,787 @@
+@model IEnumerable<TurneroTcs.ViewModels.PersonaListViewModel>
+@{
+    ViewData["Title"] = "Turnero | Personas";
+    var equipos = ViewBag.Equipos as IEnumerable<TurneroTcs.Models.Equipo> ?? Enumerable.Empty<TurneroTcs.Models.Equipo>();
+    var grupos = ViewBag.Grupos as IEnumerable<TurneroTcs.Models.Grupo> ?? Enumerable.Empty<TurneroTcs.Models.Grupo>();
+    var currentSortField = ((string?)ViewBag.SortField ?? "nombre").Trim().ToLowerInvariant();
+    var currentSortDirection = ((string?)ViewBag.SortDirection ?? "asc").Trim().ToLowerInvariant();
+    var isNameSorted = currentSortField == "nombre";
+    var nextNameSortDirection = isNameSorted && currentSortDirection == "asc" ? "desc" : "asc";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/app-data-surface.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/persona-index.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/persona-inline-edit.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.querySelector(".persona-filters");
+            if (!form) return;
+            const search = form.querySelector("input[name='search']");
+            const equipo = form.querySelector("select[name='equipoId']");
+            const grupo = form.querySelector("select[name='grupoId']");
+            const pageSize = form.querySelector("input[name='pageSize']");
+            const footerPageSize = document.querySelector("[data-persona-footer-page-size]");
+            const pageInput = form.querySelector("input[name='page']");
+            let timer;
+
+            const submitForm = () => {
+                if (pageInput) {
+                    pageInput.value = "1";
+                }
+                if (form.requestSubmit) {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
+            };
+
+            if (search) {
+                search.addEventListener("input", () => {
+                    clearTimeout(timer);
+                    timer = setTimeout(submitForm, 300);
+                });
+            }
+            [equipo, grupo].forEach((select) => {
+                if (!select) return;
+                select.addEventListener("change", submitForm);
+            });
+
+            if (footerPageSize) {
+                footerPageSize.addEventListener("change", () => {
+                    if (pageSize) {
+                        pageSize.value = footerPageSize.value;
+                    }
+                    submitForm();
+                });
+            }
+
+            if (window.bootstrap && window.bootstrap.Tooltip) {
+                document.querySelectorAll(".persona-action-tooltip, .persona-filter-tooltip").forEach((el) => {
+                    new window.bootstrap.Tooltip(el, {
+                        trigger: "hover focus",
+                        placement: "top"
+                    });
+                });
+            }
+        });
+    </script>
+}
+
+<form id="persona-inline-token" method="post" style="display:none">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h2 class="h4 mb-1 persona-title">Personas</h2>
+            <div class="text-muted persona-subtitle">Listado de miembros registrados</div>
+        </div>
+        <a asp-action="Create" class="btn app-btn-primary persona-cta">Nuevo miembro</a>
+    </div>
+
+    <form method="get" class="persona-filters app-data-filters mb-4">
+        <input type="hidden" name="page" value="@ViewBag.Page" />
+        <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+        <input type="hidden" name="sortField" value="@currentSortField" />
+        <input type="hidden" name="sortDirection" value="@currentSortDirection" />
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-3">
+                <label class="form-label persona-filter-label app-data-filter-label" for="search">Buscar</label>
+                <input id="search" name="search" value="@ViewBag.Search" class="form-control persona-filter-input app-data-filter-input" placeholder="Ultimatix o nombre" />
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label persona-filter-label app-data-filter-label" for="equipoId">Equipo</label>
+                <select id="equipoId" name="equipoId" class="form-select persona-filter-select app-data-filter-select">
+                    <option value="">Todos</option>
+                    @foreach (var equipo in (IEnumerable<TurneroTcs.Models.Equipo>)ViewBag.Equipos)
+                    {
+                        <option value="@equipo.EquipoId" selected="@(equipo.EquipoId == (string)ViewBag.EquipoId ? "selected" : null)">
+                            @equipo.NombreEquipo
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label persona-filter-label app-data-filter-label" for="grupoId">Grupo</label>
+                <select id="grupoId" name="grupoId" class="form-select persona-filter-select app-data-filter-select">
+                    <option value="">Todos</option>
+                    @foreach (var grupo in (IEnumerable<TurneroTcs.Models.Grupo>)ViewBag.Grupos)
+                    {
+                        <option value="@grupo.GrupoId" selected="@(grupo.GrupoId == (string)ViewBag.GrupoId ? "selected" : null)">
+                            @grupo.NombreGrupo
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-1 d-flex align-items-end">
+                <a asp-action="Index"
+                   class="btn btn-outline-secondary persona-filter-clear persona-filter-clear-icon app-data-filter-clear app-data-filter-clear-icon persona-filter-tooltip"
+                   aria-label="Limpiar filtros"
+                   title="Limpiar filtros">
+                    <span class="persona-filter-icon app-data-filter-icon" aria-hidden="true">
+                        <svg class="persona-filter-icon-funnel app-data-filter-icon-funnel" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 5a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 14.5V19a1 1 0 0 1-.447.832l-3 2A1 1 0 0 1 9 21v-6.5L3.2 5.6A1 1 0 0 1 3 5Z" />
+                        </svg>
+                        <svg class="persona-filter-icon-x app-data-filter-icon-x" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M4 4l6 6M10 4l-6 6" />
+                        </svg>
+                    </span>
+                    <span class="visually-hidden">Limpiar filtros</span>
+                </a>
+            </div>
+        </div>
+    </form>
+
+    @{
+        var sortBaseRoute = new Dictionary<string, string?>
+        {
+            ["search"] = (string?)ViewBag.Search,
+            ["equipoId"] = (string?)ViewBag.EquipoId,
+            ["grupoId"] = (string?)ViewBag.GrupoId,
+            ["pageSize"] = ((int)ViewBag.PageSize).ToString()
+        };
+        string BuildSortUrl(string field, string direction)
+        {
+            var query = sortBaseRoute
+                .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+                .Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value!)}")
+                .Append($"sortField={Uri.EscapeDataString(field)}")
+                .Append($"sortDirection={Uri.EscapeDataString(direction)}")
+                .Append("page=1");
+            return Url.Action("Index", "Persona") + "?" + string.Join("&", query);
+        }
+    }
+
+    <div class="card shadow-sm persona-card app-data-card">
+        <div class="card-body p-0">
+            <div class="table-responsive persona-table-wrap app-data-table-wrap">
+                <table class="table align-middle mb-0 persona-table app-data-table">
+                    <thead class="persona-table-head">
+                        <tr>
+                            <th class="persona-col-toggle"></th>
+                            <th><span class="persona-header-label app-data-header-label">Ultimatix</span></th>
+                            <th class="persona-col-nombre">
+                                <a class="persona-sort-link app-data-sort-link @(isNameSorted ? "is-active" : "")"
+                                   href="@BuildSortUrl("nombre", nextNameSortDirection)"
+                                   aria-label="Ordenar por nombre @(isNameSorted && currentSortDirection == "asc" ? "descendente" : "ascendente")">
+                                    <span class="persona-header-label app-data-header-label">Nombre</span>
+                                    <span class="persona-sort-icons app-data-sort-icons" aria-hidden="true">
+                                        <svg class="persona-sort-icon app-data-sort-icon persona-sort-icon-up @(isNameSorted && currentSortDirection == "asc" ? "is-current" : "")" viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+                                            <path d="M8 3 12 8H4z" fill="currentColor" />
+                                        </svg>
+                                        <svg class="persona-sort-icon app-data-sort-icon persona-sort-icon-down @(isNameSorted && currentSortDirection == "desc" ? "is-current" : "")" viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+                                            <path d="M8 13 4 8h8z" fill="currentColor" />
+                                        </svg>
+                                    </span>
+                                </a>
+                            </th>
+                            <th><span class="persona-header-label app-data-header-label">Rol</span></th>
+                            <th><span class="persona-header-label app-data-header-label">Equipo</span></th>
+                            <th class="persona-col-grupos"><span class="persona-header-label app-data-header-label">Grupos</span></th>
+                            <th class="persona-col-grupos-sec">
+                                <span class="persona-header-label app-data-header-label persona-col-two-lines app-data-col-two-lines">Grupos<br />secundarios</span>
+                            </th>
+                            <th><span class="persona-header-label app-data-header-label">Estado</span></th>
+                            <th class="text-end"><span class="persona-header-label app-data-header-label">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var persona in Model)
+                            {
+                                <tr class="persona-row app-data-row"
+                                    data-persona-id="@persona.PersonaId"
+                                    data-user-id="@persona.UserId"
+                                    data-nombre="@persona.Nombre"
+                                    data-segundonombre="@persona.SegundoNombre"
+                                    data-apellido="@persona.Apellido"
+                                    data-segundoapellido="@persona.SegundoApellido"
+                                    data-ultimatix="@persona.Ultimatix"
+                                    data-equipo-id="@persona.EquipoId"
+                                    data-color="@persona.ColorUsuario"
+                                    data-grupo-ids="@string.Join(",", persona.GrupoIds)"
+                                    data-grupo-sec-ids="@string.Join(",", persona.GrupoIdsSecundarios)">
+                                    <td class="persona-toggle-cell">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary persona-inline-edit persona-expand-btn"
+                                                aria-label="Expandir fila"
+                                                aria-expanded="false"
+                                                aria-controls="persona-edit-@persona.PersonaId">
+                                            <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                                <path d="M6.7 9.3a1 1 0 0 1 1.4 0L12 13.2l3.9-3.9a1 1 0 1 1 1.4 1.4l-4.6 4.6a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4Z" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <span class="cell-view" data-field-display="Ultimatix">@persona.Ultimatix</span>
+                                    </td>
+                                    <td class="persona-name-cell">
+                                        <span class="cell-view persona-name-view" data-field-display="NombreCompleto">@persona.NombreCompleto</span>
+                                    </td>
+                                    <td>@(persona.NombreRol ?? "-")</td>
+                                    <td>
+                                        <span class="cell-view" data-field-display="Equipo">@persona.NombreEquipo</span>
+                                    </td>
+                                    <td class="persona-col-grupos">
+                                        <div class="cell-view persona-group-list" data-field-display="Grupos">
+                                            @if (string.IsNullOrWhiteSpace(persona.GruposNombres))
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                            else
+                                            {
+                                                foreach (var grupoNombre in persona.GruposNombres.Split(", "))
+                                                {
+                                                    <span class="grupo-chip">@grupoNombre</span>
+                                                }
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="persona-col-grupos-sec">
+                                        <div class="cell-view persona-group-list" data-field-display="GruposSecundarios">
+                                            @if (string.IsNullOrWhiteSpace(persona.GruposSecundariosNombres))
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                            else
+                                            {
+                                                foreach (var grupoNombre in persona.GruposSecundariosNombres.Split(", "))
+                                                {
+                                                    <span class="grupo-chip">@grupoNombre</span>
+                                                }
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(persona.Borrado ? "bg-danger-subtle text-danger" : "bg-success-subtle text-success") cell-view" data-field-display="Activo">
+                                            @(persona.Borrado ? "Borrado" : "Activo")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        @if (User.IsInRole("SuperAdmin") || User.IsInRole("Admin"))
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary persona-permisos-btn persona-action-tooltip"
+                                                    aria-label="Gestionar permisos de usuario"
+                                                    title="Gestionar permisos de usuario"
+                                                    data-bs-custom-class="persona-tooltip"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#persona-permisos-modal"
+                                                    data-persona-user-id="@persona.UserId"
+                                                    data-persona-nombre="@persona.NombreCompleto">
+                                                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                                    <path d="M12 2a8 8 0 0 0-8 8v2.2a3.8 3.8 0 0 0 1.3 2.9l4.5 3.9a3.5 3.5 0 0 0 4.4 0l4.5-3.9a3.8 3.8 0 0 0 1.3-2.9V10a8 8 0 0 0-8-8Zm0 2a6 6 0 0 1 6 6v2.2a1.8 1.8 0 0 1-.62 1.37l-4.5 3.9a1.5 1.5 0 0 1-1.76 0l-4.5-3.9A1.8 1.8 0 0 1 6 12.2V10a6 6 0 0 1 6-6Zm0 4a3 3 0 0 0-3 3v.5a1 1 0 0 0 2 0V11a1 1 0 1 1 2 0v1.75a2 2 0 1 0 2 0V11a3 3 0 0 0-3-3Zm0 7a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+                                                </svg>
+                                            </button>
+                                        }
+                                        @if (User.IsInRole("SuperAdmin") || User.IsInRole("Lider"))
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-outline-primary persona-reset-btn persona-action-tooltip"
+                                                    aria-label="Restablecer contrasena"
+                                                    title="Restablecer contrasena"
+                                                    data-bs-custom-class="persona-tooltip"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#persona-reset-modal"
+                                                    data-persona-id="@persona.PersonaId"
+                                                    data-persona-nombre="@persona.NombreCompleto">
+                                                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                                    <path d="M12 3a5 5 0 0 1 5 5v2h2a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a1 1 0 0 1 1-1h2V8a5 5 0 0 1 5-5Zm3 7V8a3 3 0 1 0-6 0v2h6Zm-3 4a2 2 0 0 0-1 3.732V18a1 1 0 1 0 2 0v-.268A2 2 0 0 0 12 14Z" />
+                                                </svg>
+                                            </button>
+                                        }
+                                        @if (persona.Borrado)
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-outline-success persona-restore-btn persona-action-tooltip"
+                                                    aria-label="Recuperar persona"
+                                                    title="Recuperar persona"
+                                                    data-bs-custom-class="persona-tooltip"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#persona-restore-modal"
+                                                    data-persona-id="@persona.PersonaId"
+                                                    data-persona-nombre="@persona.NombreCompleto">
+                                                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                                    <path d="M12 5a7 7 0 1 1-6.37 4.1 1 1 0 1 1 1.82.82A5 5 0 1 0 12 7H8.41l1.3 1.29a1 1 0 0 1-1.42 1.42L5.3 6.7a1 1 0 0 1 0-1.4l2.99-3.01a1 1 0 1 1 1.42 1.42L8.41 5H12Z" />
+                                                </svg>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-outline-danger persona-delete-btn persona-action-tooltip"
+                                                    aria-label="Borrar persona"
+                                                    title="Borrar persona"
+                                                    data-bs-custom-class="persona-tooltip"
+                                                    data-persona-id="@persona.PersonaId"
+                                                    data-persona-nombre="@persona.NombreCompleto">
+                                                <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                                    <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v9h-2V9Zm4 0h2v9h-2V9ZM7 9h2v9H7V9Z" />
+                                                </svg>
+                                            </button>
+                                        }
+                                        <span class="persona-inline-status" aria-live="polite"></span>
+                                    </td>
+                                </tr>
+                                <tr class="persona-edit-row" data-persona-edit-for="@persona.PersonaId" id="persona-edit-@persona.PersonaId">
+                                    <td colspan="9">
+                                        <div class="persona-edit-panel">
+                                            <div class="persona-edit-header">
+                                                <div>
+                                                    <strong>Editar persona</strong>
+                                                    <span class="text-muted">Actualiza los datos y guarda cambios.</span>
+                                                </div>
+                                            </div>
+                                            <div class="row g-3 persona-edit-grid">
+                                                <div class="col-md-3">
+                                                    <label class="form-label persona-edit-label">Nombre</label>
+                                                    <input class="form-control persona-edit-input" data-field="Nombre" value="@persona.Nombre" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label persona-edit-label">Segundo nombre</label>
+                                                    <input class="form-control persona-edit-input" data-field="SegundoNombre" value="@persona.SegundoNombre" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label persona-edit-label">Apellido</label>
+                                                    <input class="form-control persona-edit-input" data-field="Apellido" value="@persona.Apellido" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label persona-edit-label">Segundo apellido</label>
+                                                    <input class="form-control persona-edit-input" data-field="SegundoApellido" value="@persona.SegundoApellido" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label persona-edit-label">Ultimatix</label>
+                                                    <input class="form-control persona-edit-input" data-field="Ultimatix" value="@persona.Ultimatix" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label persona-edit-label">Creado</label>
+                                                    <input class="form-control persona-edit-input" value="@persona.CreadoEn.ToString("yyyy-MM-dd")" readonly disabled />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label persona-edit-label">Equipo</label>
+                                                    <select class="form-select persona-edit-input" data-field="EquipoId">
+                                                        @foreach (var equipo in equipos)
+                                                        {
+                                                            <option value="@equipo.EquipoId" selected="@(equipo.EquipoId == persona.EquipoId ? "selected" : null)">
+                                                                @equipo.NombreEquipo
+                                                            </option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                @if (persona.Borrado)
+                                                {
+                                                    <div class="col-md-4">
+                                                        <label class="form-label persona-edit-label">Borrado en</label>
+                                                        <input class="form-control persona-edit-input"
+                                                               value="@(persona.BorradoEn?.ToString("yyyy-MM-dd HH:mm") ?? "-")"
+                                                               readonly
+                                                               disabled />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label persona-edit-label">Borrado por</label>
+                                                        <input class="form-control persona-edit-input"
+                                                               value="@(string.IsNullOrWhiteSpace(persona.BorradoPor) ? "-" : persona.BorradoPor)"
+                                                               readonly
+                                                               disabled />
+                                                    </div>
+                                                }
+                                                <div class="col-md-4">
+                                                    <label class="form-label persona-edit-label">Grupos</label>
+                                                    <div class="grupo-multi">
+                                                        <button type="button" class="grupo-multi-toggle persona-edit-input" data-grupo-toggle>
+                                                            <span data-grupo-summary>Seleccionar grupos</span>
+                                                            <span class="grupo-multi-caret">&#9662;</span>
+                                                        </button>
+                                                        <div class="grupo-multi-menu" data-grupo-menu>
+                                                            @foreach (var grupo in grupos)
+                                                            {
+                                                                <label class="grupo-option" data-equipo-id="@grupo.EquipoId">
+                                                                    <input type="checkbox"
+                                                                           data-grupo-check
+                                                                           value="@grupo.GrupoId"
+                                                                           @(persona.GrupoIds.Contains(grupo.GrupoId) ? "checked" : null) />
+                                                                    <span>@grupo.NombreGrupo</span>
+                                                                </label>
+                                                            }
+                                                        </div>
+                                                        <select class="form-select persona-edit-input grupo-select-hidden" data-field="GrupoIds" multiple>
+                                                            @foreach (var grupo in grupos)
+                                                            {
+                                                                <option value="@grupo.GrupoId"
+                                                                        data-equipo-id="@grupo.EquipoId"
+                                                                        selected="@(persona.GrupoIds.Contains(grupo.GrupoId) ? "selected" : null)">
+                                                                    @grupo.NombreGrupo
+                                                                </option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label persona-edit-label">Grupos secundarios</label>
+                                                    <div class="grupo-multi">
+                                                        <button type="button" class="grupo-multi-toggle persona-edit-input" data-grupo-toggle>
+                                                            <span data-grupo-sec-summary>Seleccionar grupos</span>
+                                                            <span class="grupo-multi-caret">&#9662;</span>
+                                                        </button>
+                                                        <div class="grupo-multi-menu" data-grupo-menu>
+                                                            @foreach (var grupo in grupos)
+                                                            {
+                                                                <label class="grupo-option" data-equipo-id="@grupo.EquipoId">
+                                                                    <input type="checkbox"
+                                                                           data-grupo-sec-check
+                                                                           value="@grupo.GrupoId"
+                                                                           @(persona.GrupoIdsSecundarios.Contains(grupo.GrupoId) ? "checked" : null) />
+                                                                    <span>@grupo.NombreGrupo</span>
+                                                                </label>
+                                                            }
+                                                        </div>
+                                                        <select class="form-select persona-edit-input grupo-select-hidden" data-field="GrupoIdsSecundarios" multiple>
+                                                            @foreach (var grupo in grupos)
+                                                            {
+                                                                <option value="@grupo.GrupoId"
+                                                                        data-equipo-id="@grupo.EquipoId"
+                                                                        selected="@(persona.GrupoIdsSecundarios.Contains(grupo.GrupoId) ? "selected" : null)">
+                                                                    @grupo.NombreGrupo
+                                                                </option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label persona-edit-label">Color</label>
+                                                    <input class="form-control form-control-color persona-edit-color" type="color" data-field="ColorUsuario" value="@(string.IsNullOrWhiteSpace(persona.ColorUsuario) ? "#1f4d46" : persona.ColorUsuario)" />
+                                                </div>
+                                            </div>
+                                            <div class="persona-edit-actions">
+                                                <button type="button" class="btn btn-outline-secondary persona-inline-cancel">Cancelar</button>
+                                                <button type="button" class="btn btn-primary persona-inline-save">Guardar cambios</button>
+                                                <span class="persona-inline-status" aria-live="polite"></span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="10" class="text-center text-muted py-4">
+                                    No hay personas registradas.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    @{
+        var footerPage = (int)ViewBag.Page;
+        var footerTotalPages = (int)ViewBag.TotalPages;
+        var footerPageSize = (int)ViewBag.PageSize;
+        var footerTotalCount = (int)ViewBag.TotalCount;
+        var footerCurrentCount = Model?.Count() ?? 0;
+        var footerStartItem = footerTotalCount == 0 ? 0 : ((footerPage - 1) * footerPageSize) + 1;
+        var footerEndItem = footerTotalCount == 0 ? 0 : footerStartItem + footerCurrentCount - 1;
+        var footerSearch = (string?)ViewBag.Search;
+        var footerEquipoId = (string?)ViewBag.EquipoId;
+        var footerGrupoId = (string?)ViewBag.GrupoId;
+        var footerVisiblePages = Enumerable.Range(1, footerTotalPages)
+            .Where(p => p == 1 || p == footerTotalPages || Math.Abs(p - footerPage) <= 1)
+            .ToList();
+        var footerBaseRoute = new Dictionary<string, string?>
+        {
+            ["search"] = footerSearch,
+            ["equipoId"] = footerEquipoId,
+            ["grupoId"] = footerGrupoId,
+            ["pageSize"] = footerPageSize.ToString(),
+            ["sortField"] = currentSortField,
+            ["sortDirection"] = currentSortDirection
+        };
+        string BuildFooterUrl(int p)
+        {
+            var query = footerBaseRoute
+                .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+                .Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value!)}")
+                .Append($"page={p}");
+            return Url.Action("Index", "Persona") + "?" + string.Join("&", query);
+        }
+    }
+    @if (footerTotalCount > 0)
+    {
+        <div class="persona-table-footer app-data-footer">
+            <div class="persona-footer-copy app-data-footer-copy">
+                <span class="persona-footer-title app-data-footer-title">Mostrando @footerStartItem-@footerEndItem de @footerTotalCount miembros</span>
+                <div class="persona-footer-meta app-data-footer-meta">
+                    <span class="persona-footer-pill app-data-footer-pill">Pagina @footerPage de @footerTotalPages</span>
+                </div>
+            </div>
+            <div class="app-data-footer-actions">
+                <div class="app-data-page-size-control">
+                    <label class="app-data-page-size-label" for="personaFooterPageSize">Filas</label>
+                    <select id="personaFooterPageSize"
+                            class="form-select app-data-page-size-select"
+                            data-persona-footer-page-size>
+                        <option value="15" selected="@(footerPageSize == 15 ? "selected" : null)">15</option>
+                        <option value="25" selected="@(footerPageSize == 25 ? "selected" : null)">25</option>
+                        <option value="50" selected="@(footerPageSize == 50 ? "selected" : null)">50</option>
+                        <option value="100" selected="@(footerPageSize == 100 ? "selected" : null)">100</option>
+                    </select>
+                </div>
+                @if (footerTotalPages > 1)
+                {
+                    <nav class="persona-pagination persona-pagination-shell app-data-pagination app-data-pagination-shell" aria-label="Paginacion">
+                    <a class="persona-page-nav persona-page-nav-edge app-data-page-nav app-data-page-nav-edge @(footerPage == 1 ? "is-disabled" : "")"
+                       href="@(footerPage == 1 ? "#" : BuildFooterUrl(1))"
+                       aria-label="Primera pagina">
+                        <span>Primera</span>
+                    </a>
+                    <a class="persona-page-nav app-data-page-nav @(footerPage == 1 ? "is-disabled" : "")"
+                       href="@(footerPage == 1 ? "#" : BuildFooterUrl(footerPage - 1))"
+                       aria-label="Pagina anterior">
+                        <span class="persona-page-nav-icon app-data-page-nav-icon" aria-hidden="true">&lsaquo;</span>
+                        <span>Anterior</span>
+                    </a>
+                    <div class="persona-page-links app-data-page-links">
+                        @{
+                            int? footerPreviousVisiblePage = null;
+                        }
+                        @foreach (var p in footerVisiblePages)
+                        {
+                            @if (footerPreviousVisiblePage.HasValue && p - footerPreviousVisiblePage.Value > 1)
+                            {
+                                <span class="persona-page-gap app-data-page-gap" aria-hidden="true">...</span>
+                            }
+                            <a class="persona-page-link app-data-page-link @(p == footerPage ? "is-active" : "")"
+                               href="@(p == footerPage ? "#" : BuildFooterUrl(p))"
+                               aria-current="@(p == footerPage ? "page" : null)">
+                                @p
+                            </a>
+                            footerPreviousVisiblePage = p;
+                        }
+                    </div>
+                    <a class="persona-page-nav app-data-page-nav @(footerPage == footerTotalPages ? "is-disabled" : "")"
+                       href="@(footerPage == footerTotalPages ? "#" : BuildFooterUrl(footerPage + 1))"
+                       aria-label="Pagina siguiente">
+                        <span>Siguiente</span>
+                        <span class="persona-page-nav-icon app-data-page-nav-icon" aria-hidden="true">&rsaquo;</span>
+                    </a>
+                    <a class="persona-page-nav persona-page-nav-edge app-data-page-nav app-data-page-nav-edge @(footerPage == footerTotalPages ? "is-disabled" : "")"
+                       href="@(footerPage == footerTotalPages ? "#" : BuildFooterUrl(footerTotalPages))"
+                       aria-label="Ultima pagina">
+                        <span>Ultima</span>
+                    </a>
+                    </nav>
+                }
+            </div>
+        </div>
+    }
+    </div>
+
+    @if (false && (int)ViewBag.TotalPages > 1)
+    {
+        <nav class="persona-pagination" aria-label="Paginacion">
+            <ul class="pagination justify-content-end">
+                @{
+                    var page = (int)ViewBag.Page;
+                    var totalPages = (int)ViewBag.TotalPages;
+                    var pageSize = (int)ViewBag.PageSize;
+                    var search = (string?)ViewBag.Search;
+                    var equipoId = (string?)ViewBag.EquipoId;
+                    var grupoId = (string?)ViewBag.GrupoId;
+                    var baseRoute = new Dictionary<string, string?>
+                    {
+                        ["search"] = search,
+                        ["equipoId"] = equipoId,
+                        ["grupoId"] = grupoId,
+                        ["pageSize"] = pageSize.ToString()
+                    };
+                    string BuildUrl(int p)
+                    {
+                        var query = (baseRoute ?? new Dictionary<string, string?>())
+                            .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+                            .Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value!)}")
+                            .Append($"page={p}");
+                        return Url.Action("Index", "Persona") + "?" + string.Join("&", query);
+                    }
+                }
+                <li class="page-item @(page == 1 ? "disabled" : "")">
+                    <a class="page-link" href="@(page == 1 ? "#" : BuildUrl(page - 1))" aria-label="Anterior">‹</a>
+                </li>
+                @for (var p = 1; p <= totalPages; p++)
+                {
+                    <li class="page-item @(p == page ? "active" : "")">
+                        <a class="page-link" href="@(p == page ? "#" : BuildUrl(p))">@p</a>
+                    </li>
+                }
+                <li class="page-item @(page == totalPages ? "disabled" : "")">
+                    <a class="page-link" href="@(page == totalPages ? "#" : BuildUrl(page + 1))" aria-label="Siguiente">›</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<div class="modal fade" id="persona-delete-modal" tabindex="-1" aria-labelledby="persona-delete-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="persona-delete-modal-label">Borrar persona</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1" data-persona-delete-base-message>Esta acci&oacute;n marcar&aacute; la persona como borrada y bloquear&aacute; su acceso.</p>
+                <div class="alert alert-warning d-none mb-2" role="alert" data-persona-delete-future-warning></div>
+                <p class="mb-0" data-persona-delete-question>Sus registros hist&oacute;ricos se conservar&aacute;n. Deseas continuar con <strong data-persona-delete-name>esta persona</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="persona-delete-form" asp-action="Delete" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="" />
+                    <button type="submit" class="btn btn-danger">Borrar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="persona-restore-modal" tabindex="-1" aria-labelledby="persona-restore-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="persona-restore-modal-label">Recuperar persona</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Esta acci&oacute;n volver&aacute; a activar la persona y habilitar&aacute; nuevamente su acceso.</p>
+                <p class="mb-0">Se conservar&aacute; el historial del borrado anterior. Deseas continuar con <strong data-persona-restore-name>esta persona</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="persona-restore-form" asp-action="Restore" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="" />
+                    <button type="submit" class="btn btn-success">Recuperar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade persona-reset-modal" id="persona-reset-modal" tabindex="-1" aria-labelledby="persona-reset-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="persona-reset-modal-label">Restablecer contrasena</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Define una nueva contrasena para <strong data-persona-reset-name>esta persona</strong>.</p>
+                <div class="mb-3">
+                    <label class="form-label">Nueva contrasena</label>
+                    <div class="persona-reset-field">
+                        <input type="password" class="form-control persona-reset-input" id="persona-reset-password" autocomplete="new-password" />
+                        <button type="button"
+                                class="persona-reset-toggle"
+                                data-password-toggle="#persona-reset-password"
+                                aria-label="Mostrar contrasena">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="persona-reset-feedback mt-2">
+                        <div class="persona-reset-strength">
+                            <span class="persona-reset-feedback-label">Seguridad</span>
+                            <span class="persona-reset-strength-text is-empty" data-persona-reset-strength-text>Sin evaluar</span>
+                        </div>
+                        <div class="persona-reset-strength-track" aria-hidden="true">
+                            <span class="persona-reset-strength-fill is-empty" data-persona-reset-strength-fill></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Confirmar contrasena</label>
+                    <div class="persona-reset-field">
+                        <input type="password" class="form-control persona-reset-input" id="persona-reset-password-confirm" autocomplete="new-password" />
+                        <button type="button"
+                                class="persona-reset-toggle"
+                                data-password-toggle="#persona-reset-password-confirm"
+                                aria-label="Mostrar contrasena">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="persona-reset-match mt-2">
+                        <span class="persona-reset-match-text is-empty" data-persona-reset-match-text>Confirma la contrasena para validar coincidencia.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="persona-reset-confirm">Restablecer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade persona-permisos-modal" id="persona-permisos-modal" tabindex="-1" aria-labelledby="persona-permisos-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="persona-permisos-modal-label">Permisos de usuario</h5>
+                    <div class="persona-permisos-subtitle text-muted" data-persona-permisos-nombre>-</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="persona-permisos-filters mb-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label persona-edit-label mb-1" for="personaPermisoSearch">Buscar</label>
+                            <input id="personaPermisoSearch"
+                                   class="form-control persona-edit-input"
+                                   type="text"
+                                   placeholder="Codigo o nombre"
+                                   data-permiso-search />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label persona-edit-label mb-1" for="personaPermisoModulo">Modulo</label>
+                            <select id="personaPermisoModulo" class="form-select persona-edit-input" data-permiso-modulo>
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label persona-edit-label mb-1" for="personaPermisoDirecto">Regla personal</label>
+                            <select id="personaPermisoDirecto" class="form-select persona-edit-input" data-permiso-directo>
+                                <option value="">Todos</option>
+                                <option value="none">Sin asignacion</option>
+                                <option value="allow">Permitido</option>
+                                <option value="deny">Denegado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button type="button" class="btn btn-outline-secondary" data-permiso-clear>
+                                Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="persona-permisos-list" data-persona-permisos-list>
+                    <div class="text-muted text-center py-4">Selecciona una persona para gestionar permisos.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
