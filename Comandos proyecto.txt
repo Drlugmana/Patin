@@ -1,0 +1,92 @@
+Build y Ejecución Básica
+
+# Build del proyecto
+dotnet build
+
+# Build en Release (optimizado para producción)
+dotnet build -c Release
+
+# Limpiar archivos compilados
+dotnet clean
+===================================================
+Ejecución Local
+
+# Run en desarrollo (HTTP por defecto)
+dotnet run
+
+# Run en desarrollo con watch (recarga automática)
+dotnet watch run
+
+# Run especificando puerto HTTP
+dotnet run --urls "http://localhost:5000"
+===================================================
+
+Certificados SSL para HTTPS
+
+# Instalar certificado SSL de desarrollo
+dotnet dev-certs https --trust
+
+# Instalar solo el certificado sin confiar en él
+dotnet dev-certs https
+
+# Limpiar certificados anteriores
+dotnet dev-certs https --clean
+
+# Verificar si está instalado
+dotnet dev-certs https --check
+
+===================================================
+
+Run en HTTPS (Desarrollo)
+
+# Run en HTTPS local
+dotnet run --urls "https://localhost:5001"
+
+# Run en ambos (HTTP y HTTPS)
+dotnet run --urls "https://localhost:5001;http://localhost:5000"
+
+# Con watch en HTTPS
+dotnet watch run --urls "https://localhost:5001"
+
+===================================================
+
+Publicar para Producción
+
+
+# Publicar en Release
+dotnet publish -c Release
+
+# Publicar en carpeta específica
+dotnet publish -c Release -o ./publish
+
+# Publicar para framework específico
+dotnet publish -c Release --self-contained -r win-x64
+
+# Ejecutar desde la carpeta publicada
+dotnet ./publish/TurneroTcs.dll
+===================================================
+
+Configuración en appsettings
+
+
+app.UseHttpsRedirection(); // Redirige HTTP a HTTPS
+
+
+===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
